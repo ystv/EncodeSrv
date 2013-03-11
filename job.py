@@ -56,23 +56,6 @@ class FFmpegJob (threading.Thread):
 		except:
 			logging.debug("Job %s - Failed to create temporary directory", (self.jobreq['id']))
 		
-		# copy to local folder, rename source
-		try:
-			destleaf = os.path.basename(self.jobreq['destination_file'])
-			srcleaf = "%s-source%s" % os.path.splitext(destleaf)
-			srcpath = os.path.join(dirname, srcleaf)
-		except:
-			logging.exception("Job %s - Debug 2 failed", (self.jobreq['id']));
-		
-		try:
-			shutil.copyfile(self.jobreq['source_file'], srcpath)
-		except:
-			logging.exception("Job %s: couldn't copy from %s to %s" % (
-				self.jobreq['id'],self.jobreq['source_file'], dirname
-			))
-			self._update_status("Error", self.jobreq['id'])
-			return
-		
 		# create PG connection
 		
 		try:
@@ -105,6 +88,24 @@ class FFmpegJob (threading.Thread):
 		except:
 			logging.exception("Job %s - Debug 3 failed", (self.jobreq['id']));
 		
+		# copy to local folder, rename source
+		try:
+			destleaf = os.path.basename(self.jobreq['destination_file'])
+			srcleaf = "%s-source%s" % os.path.splitext(destleaf)
+			srcpath = os.path.join(dirname, srcleaf)
+		except:
+			logging.exception("Job %s - Debug 2 failed", (self.jobreq['id']));
+		
+		try:
+			shutil.copyfile(self.jobreq['source_file'], srcpath)
+		except:
+			logging.exception("Job %s: couldn't copy from %s to %s" % (
+				self.jobreq['id'],self.jobreq['source_file'], dirname
+			))
+			self._update_status("Error", self.jobreq['id'])
+			return
+		
+
 		# LET'S GO BITCHES		
 		try:
 			self.dbcur.execute("UPDATE encode_jobs SET working_directory=%s WHERE id=%s", 
