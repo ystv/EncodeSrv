@@ -26,7 +26,7 @@ class FFmpegJob (threading.Thread):
 			self.dbcur.execute("UPDATE encode_jobs SET status=%s WHERE id = %s", (status,id))
 			self.dbconn.commit()
 		except:
-			logging.error("Job %s: Failed to update status in DB for", (id))
+			logging.exception("Job %s: Failed to update status in DB for", (id))
 		
 	def run(self):
 		while True:
@@ -62,12 +62,12 @@ class FFmpegJob (threading.Thread):
 			srcleaf = "%s-source%s" % os.path.splitext(destleaf)
 			srcpath = os.path.join(dirname, srcleaf)
 		except:
-			logging.error("Job %s - Debug 2 failed", (self.jobreq['id']));
+			logging.exception("Job %s - Debug 2 failed", (self.jobreq['id']));
 		
 		try:
 			shutil.copyfile(self.jobreq['source_file'], srcpath)
 		except:
-			logging.error("Job %s: couldn't copy from %s to %s" % (
+			logging.exception("Job %s: couldn't copy from %s to %s" % (
 				self.jobreq['id'],self.jobreq['source_file'], dirname
 			))
 			self._update_status("Error", self.jobreq['id'])
@@ -79,7 +79,7 @@ class FFmpegJob (threading.Thread):
 			self.dbconn = psycopg2.connect(**Config['database'])
 			self.dbcur  = self.dbconn.cursor()
 		except:
-			logging.error("Job %s: Could not connect to database",(self.jobreq['id']))
+			logging.exception("Job %s: Could not connect to database",(self.jobreq['id']))
 		
 		try:
 			cols = ('container', 'video_bitrate', 'video_bitrate_tolerance','video_codec',
@@ -103,7 +103,7 @@ class FFmpegJob (threading.Thread):
 			args['_VPre'] = args['preset_string']
 			args['_TempDest'] = os.path.join(dirname, os.path.basename(self.jobreq['destination_file']))
 		except:
-			logging.error("Job %s - Debug 3 failed", (self.jobreq['id']));
+			logging.exception("Job %s - Debug 3 failed", (self.jobreq['id']));
 		
 		# LET'S GO BITCHES		
 		try:
@@ -111,7 +111,7 @@ class FFmpegJob (threading.Thread):
 				(dirname, self.jobreq['id'])
 			) ; self.dbconn.commit()
 		except:
-			logging.error("Job %s: Failed to update database", (self.jobreq['id']))
+			logging.exception("Job %s: Failed to update database", (self.jobreq['id']))
 
 		for _pass in (1, 2):
 			try:
@@ -135,11 +135,11 @@ class FFmpegJob (threading.Thread):
 				logging.debug("Done Waiting.")
 				
 				if cmd.returncode != 0:
-					logging.error("Job %s: Pass %d FAILED for %s" % (self.jobreq['id'],_pass, os.path.basename(dirname)))
+					logging.exception("Job %s: Pass %d FAILED for %s" % (self.jobreq['id'],_pass, os.path.basename(dirname)))
 					self._update_status("Error", self.jobreq['id'])
 					return
 			except:
-				logging.error("Job %s - Debug 4 failed", (self.jobreq['id']));
+				logging.exception("Job %s - Debug 4 failed", (self.jobreq['id']));
 				
 			# Apply MP4 Box if applicable
 			
@@ -151,11 +151,11 @@ class FFmpegJob (threading.Thread):
 				cmd.wait()
 				
 				if cmd.returncode != 0:
-					logging.error("Job %s: MP4Box-ing failed for \"%s\"" % (self.jobreq['id'],os.path.basename(dirname)))
+					logging.exception("Job %s: MP4Box-ing failed for \"%s\"" % (self.jobreq['id'],os.path.basename(dirname)))
 					self._update_status("Error", self.jobreq['id'])
 					return	
 		except:
-			logging.error("Job %s - Debug 5 failed", (self.jobreq['id']));
+			logging.exception("Job %s - Debug 5 failed", (self.jobreq['id']));
 				
 				
 			
@@ -170,7 +170,7 @@ class FFmpegJob (threading.Thread):
 				try:
 					os.makedirs(os.path.dirname(self.jobreq['destination_file']))
 				except OSError:
-					logging.error("Job %s: Failed to create destination directory %s" % (self.jobreq['id'], os.path.dirname(self.jobreq['destination_file'])))
+					logging.exception("Job %s: Failed to create destination directory %s" % (self.jobreq['id'], os.path.dirname(self.jobreq['destination_file'])))
 					self._update_status("Error", self.jobreq['id'])
 					return
 
@@ -185,7 +185,7 @@ class FFmpegJob (threading.Thread):
 				logging.debug("Job %s: Unable to update video file status",(self.jobreq['id']))
 
 		except IOError:
-			logging.error("Job %s: Failed to copy %s to %s" % (
+			logging.exception("Job %s: Failed to copy %s to %s" % (
 				os.path.basename(self.jobreq['id'],self.jobreq['source_file']), destleaf
 			))
 			self._update_status("Error", self.jobreq['id'])
@@ -195,7 +195,7 @@ class FFmpegJob (threading.Thread):
 			shutil.rmtree(os.path.dirname(args['_TempDest']))
 		except OSError:
 			self._update_status("Encoded", self.jobreq['id'])
-			logging.error("Job %s: Failed to remove directory: %s" %  (self.jobreq['id'],os.path.dirname(args['_TempDest'])));
+			logging.exception("Job %s: Failed to remove directory: %s" %  (self.jobreq['id'],os.path.dirname(args['_TempDest'])));
 
 		del self.dbcur
 		del self.dbconn

@@ -9,7 +9,7 @@ class Daemon:
 	
 	Usage: subclass the Daemon class and override the run() method
 	"""
-	def __init__(self, pidfile, stdin='/dev/null', stdout='/tmp/encodeout', stderr='/dev/null'):
+	def __init__(self, pidfile, stdin='/dev/null', stdout='/tmp/encodeout', stderr='/tmp/encodeerr'):
 		self.stdin = stdin
 		self.stdout = stdout
 		self.stderr = stderr

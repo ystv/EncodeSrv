@@ -8,5 +8,6 @@ Config = {
 		"password": "Qaqh8MwftN4PY9r"
 	},
 	"tmpfolder": "/data/tmpencoding",
-	"source_footage": "/data/encoding"
+	"source_footage": "/data/encoding",
+        "email_recipients": "computing@ystv.co.uk"
 }

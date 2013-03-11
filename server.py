@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import psycopg2, threading, Queue, time, sys, logging
+import psycopg2, threading, Queue, time, sys, logging, logging.handlers
 from job import FFmpegJob
 
 from config import Config
@@ -9,8 +9,16 @@ LOG_FILENAME= "/var/log/encodesrv"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 def main():
-	
+	# Setup a basic logging system to file	
 	logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format=LOG_FORMAT)
+	# Setup logging to email for critical failures
+	mailhandler = logging.handlers.SMTPHandler(mailhost='ystv.co.uk',
+							fromaddr='encodesrv@ystv.co.uk',
+							toaddrs=Config["email_recipients"],
+							subject='Encode Job Failure')
+	mailhandler.setLevel(logging.ERROR)
+	logging.getLogger('').addHandler(mailhandler)
+
 	logging.debug("Starting Up")
 	# Setup a pool of threads to handle encode jobs.
 	FFmpegJob.THREADPOOL = Queue.Queue(0)
@@ -24,7 +32,7 @@ def main():
 		cur.close()
 	 	dbconn.close()	
         except:
-            	logging.error("Failed to connect to database on start, oops")
+            	logging.exception("Failed to connect to database on start, oops")
 
 		
 	# Spawn off 2 threads to handle the jobs.	
@@ -65,7 +73,7 @@ def main():
 			conn.close()
 			#print "sleeping"
 		except:
-			logging.error("ERROR: An unhandled exception occured in the server whilst getting jobs.")
+			logging.exception("ERROR: An unhandled exception occured in the server whilst getting jobs.")
 		time.sleep(60) #sleep after a run
 		while FFmpegJob.THREADPOOL.qsize() > 6:
     		    logging.debug("Going to sleep for a while")
