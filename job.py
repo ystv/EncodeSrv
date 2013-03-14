@@ -56,6 +56,13 @@ class FFmpegJob (threading.Thread):
 		except:
 			logging.debug("Job %s - Failed to create temporary directory", (self.jobreq['id']))
 		
+		try:
+			destleaf = os.path.basename(self.jobreq['destination_file'])
+			srcleaf = "%s-source%s" % os.path.splitext(destleaf)
+			srcpath = os.path.join(dirname, srcleaf)
+		except:
+			logging.exception("Job %s - Debug 2 failed", (self.jobreq['id']));
+		
 		# create PG connection
 		
 		try:
@@ -89,12 +96,6 @@ class FFmpegJob (threading.Thread):
 			logging.exception("Job %s - Debug 3 failed", (self.jobreq['id']));
 		
 		# copy to local folder, rename source
-		try:
-			destleaf = os.path.basename(self.jobreq['destination_file'])
-			srcleaf = "%s-source%s" % os.path.splitext(destleaf)
-			srcpath = os.path.join(dirname, srcleaf)
-		except:
-			logging.exception("Job %s - Debug 2 failed", (self.jobreq['id']));
 		
 		try:
 			shutil.copyfile(self.jobreq['source_file'], srcpath)
