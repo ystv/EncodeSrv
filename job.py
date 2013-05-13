@@ -43,6 +43,12 @@ class FFmpegJob (threading.Thread):
 	
 		print "run_impl"
 			
+		# Check whether source file exists
+		try:
+			with open(self.jobreq['source_file']): pass
+		except IOError:
+			logging.exception("Job %s: Unable to open source file", (self.jobreq['id']))
+			
 		# create dir for this job
 		try:
 			dirname = os.path.join(Config['tmpfolder'], "%s--encode--%s" % (
