@@ -26,7 +26,7 @@ class FFmpegJob (threading.Thread):
 			self.dbcur.execute("UPDATE encode_jobs SET status=%s WHERE id = %s", (status,id))
 			self.dbconn.commit()
 		except:
-			logging.exception("Job %s: Failed to update status in DB for", (id))
+			logging.exception("Job %s: Failed to update status in DB", (id))
 		
 	def run(self):
 		while True:
