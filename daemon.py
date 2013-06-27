@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, time, atexit
+import sys, os, time, atexit, fcntl
 from signal import SIGTERM 
 
 class Daemon:
@@ -9,6 +9,9 @@ class Daemon:
 	
 	Usage: subclass the Daemon class and override the run() method
 	"""
+	
+	pfile = None
+	
 	def __init__(self, pidfile, stdin='/dev/null', stdout='/tmp/encodeout', stderr='/tmp/encodeerr'):
 		self.stdin = stdin
 		self.stdout = stdout
@@ -58,8 +61,13 @@ class Daemon:
 		# write pidfile
 		atexit.register(self.delpid)
 		pid = str(os.getpid())
-		file(self.pidfile,'w+').write("%s\n" % pid)
-	
+		self.pfile = open(self.pidfile,'w+')
+		self.pfile.write("%s\n" % pid)
+		self.pfile.flush()
+		
+		# Grab advisory lock on pidfile
+		fcntl.lockf(self.pfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
+		
 	def delpid(self):
 		os.remove(self.pidfile)
 
@@ -67,18 +75,32 @@ class Daemon:
 		"""
 		Start the daemon
 		"""
+		pf = None
 		# Check for a pidfile to see if the daemon already runs
 		try:
-			pf = file(self.pidfile,'r')
+			pf = open(self.pidfile,'r')
 			pid = int(pf.read().strip())
 			pf.close()
 		except IOError:
 			pid = None
+		except ValueError:
+			pid = -1
 	
 		if pid:
-			message = "pidfile %s already exist. Daemon already running?\n"
-			sys.stderr.write(message % self.pidfile)
-			sys.exit(1)
+			try:
+				# Try and grab a lock, will fail if running
+				pf = open(self.pidfile, 'w')
+				fcntl.lockf(pf, fcntl.LOCK_EX | fcntl.LOCK_NB)
+			except IOError:
+				message = "pidfile %s already exist. Daemon already running?\n"
+				sys.stderr.write(message % self.pidfile)
+				sys.exit(1)
+				
+			# We got a pidfile from a crashed process, ignore it
+			sys.stderr.write("Got a stale pidfile, overwriting\n")
+		
+		if pf:
+			pf.close()
 		
 		# Start the daemon
 		self.daemonize()
