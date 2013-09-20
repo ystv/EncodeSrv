@@ -194,7 +194,7 @@ class FFmpegJob (threading.Thread):
 
 		except IOError:
 			logging.exception("Job %s: Failed to copy %s to %s" % (
-				os.path.basename(self.jobreq['id'],self.jobreq['source_file']), destleaf
+				self.jobreq['id'],os.path.basename(self.jobreq['source_file']), destleaf
 			))
 			self._update_status("Error", self.jobreq['id'])
 		
