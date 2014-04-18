@@ -7,7 +7,10 @@ Config = {
 		"user"    : "encode",
 		"password": "Qaqh8MwftN4PY9r"
 	},
+	"mail": {
+		"host"	: "ystv.co.uk",
+		"from"	: "encodesrv@ystv.co.uk",
+		"to"	: "computing@ystv.co.uk"
+	},
 	"tmpfolder": "/data/tmpencoding",
-	"source_footage": "/data/encoding",
-        "email_recipients": "computing@ystv.co.uk"
 }

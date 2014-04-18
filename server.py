@@ -9,17 +9,23 @@ LOG_FILENAME= "/var/log/encodesrv"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 def main():
+	"""Main server loop.
+
+	Sets up logging and database connection, gets job list
+	"""
 	# Setup a basic logging system to file	
 	logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format=LOG_FORMAT)
+
 	# Setup logging to email for critical failures
-	mailhandler = logging.handlers.SMTPHandler(mailhost='ystv.co.uk',
-							fromaddr='encodesrv@ystv.co.uk',
-							toaddrs=Config["email_recipients"],
+	mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
+							fromaddr=Config["mail"]["from"],
+							toaddrs=Config["mail"]["to"],
 							subject='Encode Job Failure')
 	mailhandler.setLevel(logging.ERROR)
 	logging.getLogger('').addHandler(mailhandler)
 
 	logging.debug("Starting Up")
+
 	# Setup a pool of threads to handle encode jobs.
 	FFmpegJob.THREADPOOL = Queue.Queue(0)
 	
@@ -46,26 +52,20 @@ def main():
 	columns = ["id", "source_file", "destination_file", "format_id", "status", "video_id"]
 	
 	# Now we need to get some data.
-	
 	while True:
 		try:
 			# Connect to the db
-			#logging.debug("Connecting to Database")
 			conn = psycopg2.connect(**Config["database"])
 			cur = conn.cursor()
 			# Search the DB for jobs not being encoded
-			#logging.debug("Getting Jobs to do from db")
 			query = "SELECT %s FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT "+str(6-FFmpegJob.THREADPOOL.qsize())
 			cur.execute(query  % ", ".join(columns))
 			jobs = cur.fetchall()
-			#print "getting data:"
-			#logging.debug("Adding jobs to queue")
 			for job in jobs:
 				data = dict(zip(columns, job))
-			#	print data
-			#	print "Adding data to thread queue"
+
 				FFmpegJob.THREADPOOL.put(data)
-			#	print "Updating DB to say it's waiting to do stuff"
+
 				cur.execute("UPDATE encode_jobs SET status = 'Waiting' WHERE id = %s", (data["id"],))
 				conn.commit()
 			# Close communication with the database
