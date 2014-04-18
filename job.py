@@ -1,5 +1,5 @@
 import threading, psycopg2, Queue
-import os.path, shlex, shutil, logging, time, subprocess
+import os.path, shlex, shutil, logging, time, subprocess, re
 from datetime import datetime
 from string import maketrans
 from config import Config
@@ -85,14 +85,12 @@ class FFmpegJob (threading.Thread):
 			cols = ('container', 'video_bitrate', 'video_bitrate_tolerance','video_codec',
 			        'video_resolution', 'audio_bitrate', 'audio_samplerate','audio_codec',
 			        'vpre_string', 'preset_string', 'aspect_ratio', 'args_beginning', 'args_video',
-			        'args_audio', 'args_end', 'apply_mp4box')
+			        'args_audio', 'args_end', 'apply_mp4box', 'normalise_level')
 			self.dbcur.execute("SELECT %s FROM encode_formats WHERE id = %s" % 
 				(", ".join(cols), self.jobreq['format_id']) )
 		
 			fetched = [x if x is not None else '' for x in self.dbcur.fetchone()]
 			args = dict(zip(cols, fetched))
-			
-			
 			
 			# Process the special ones (the /^_[A-Z]/ ones)
 			args['_SourceFile'] = srcpath
@@ -113,6 +111,24 @@ class FFmpegJob (threading.Thread):
 			self._update_status("Error", self.jobreq['id'])
 			return
 		
+		# Analyse video for normalisation if requested
+		if args['normalise_level'] is not None:
+			try:
+				analysis = subprocess.check_output(["ffmpeg", "-i", srcpath, "-af", 
+					"ebur128", "-f", "null", "-y", "/dev/null"], stderr=subprocess.STDOUT)
+				maxvolume = re.search(r"Integrated loudness:$\s* I:\s*(-?\d*.\d*) LUFS", analysis,
+					flags=re.MULTILINE).group(1)
+				
+				# Calculate normalisation factor
+				change = args['normalise_level'] - float(maxvolume)
+				increase_factor = 10 ** ((args['normalise_level'] - float(maxvolume)) / 20)
+		
+				logging.debug('Multiplying volume by {:.2f}'.format(increase_factor))
+				args['args_audio'] += '-af volume={0}'.format(increase_factor)
+			except:
+				logging.exception("Job %s: Failed normalising volume" % (self.jobreq['id']))
+				self._update_status("Error", self.jobreq['id'])
+				return
 
 		# Run encode job		
 		try:
