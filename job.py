@@ -112,16 +112,17 @@ class FFmpegJob (threading.Thread):
 			return
 		
 		# Analyse video for normalisation if requested
-		if args['normalise_level'] is not None:
+		if args['normalise_level'] is not '':
 			try:
+				level = float(args['normalise_level'])
 				analysis = subprocess.check_output(["ffmpeg", "-i", srcpath, "-af", 
 					"ebur128", "-f", "null", "-y", "/dev/null"], stderr=subprocess.STDOUT)
 				maxvolume = re.search(r"Integrated loudness:$\s* I:\s*(-?\d*.\d*) LUFS", analysis,
 					flags=re.MULTILINE).group(1)
 				
 				# Calculate normalisation factor
-				change = args['normalise_level'] - float(maxvolume)
-				increase_factor = 10 ** ((args['normalise_level'] - float(maxvolume)) / 20)
+				change = level - float(maxvolume)
+				increase_factor = 10 ** ((level - float(maxvolume)) / 20)
 		
 				logging.debug('Multiplying volume by {:.2f}'.format(increase_factor))
 				args['args_audio'] += '-af volume={0}'.format(increase_factor)
