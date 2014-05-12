@@ -11,6 +11,21 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: encodestatus; Type: TYPE; Schema: public; Tablespace: 
+--
+CREATE TYPE encodestatus AS ENUM (
+    'Not Encoding',
+    'Waiting',
+    'Encoding Pass 1',
+    'Encoding Pass 2',
+    'Encoded',
+    'Moving File',
+    'Adding to Website',
+    'Done',
+    'Error'
+);
+
+--
 -- Name: encode_formats; Type: TABLE; Schema: public; Tablespace: 
 --
 
