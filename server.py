@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import psycopg2, threading, Queue, time, sys, logging, logging.handlers
+import os.path.join
 from job import FFmpegJob
 
 from config import Config
@@ -63,7 +64,9 @@ def main():
 			jobs = cur.fetchall()
 			for job in jobs:
 				data = dict(zip(columns, job))
-
+				for key in data:
+					if key in ["sourcefile", "destination_file"}:
+						data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
 				FFmpegJob.THREADPOOL.put(data)
 
 				cur.execute("UPDATE encode_jobs SET status = 'Waiting' WHERE id = %s", (data["id"],))
