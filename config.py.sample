@@ -13,4 +13,5 @@ Config = {
 		"to"	: "computing@example.com"
 	},
 	"tmpfolder": "/data/tmpencoding",
+	"mntfolder": "/",
 }
