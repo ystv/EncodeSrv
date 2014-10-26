@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import psycopg2, threading, Queue, time, sys, logging, logging.handlers
-import os.path.join
+import os.path
 from job import FFmpegJob
 
 from config import Config
