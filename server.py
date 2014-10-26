@@ -65,7 +65,7 @@ def main():
 			for job in jobs:
 				data = dict(zip(columns, job))
 				for key in data:
-					if key in ["sourcefile", "destination_file"}:
+					if key in ["sourcefile", "destination_file"]:
 						data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
 				FFmpegJob.THREADPOOL.put(data)
 
