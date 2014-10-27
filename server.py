@@ -72,7 +72,7 @@ def main():
             conn = psycopg2.connect(**Config["database"])
             cur = conn.cursor()
             # Search the DB for jobs not being encoded
-            query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(6-FFmpegJob.THREADPOOL.qsize(), ", ".join(columns))
+            query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 6-FFmpegJob.THREADPOOL.qsize())
             cur.execute(query)
             jobs = cur.fetchall()
             for job in jobs:
