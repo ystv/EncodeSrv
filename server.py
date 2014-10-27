@@ -6,7 +6,7 @@ from job import FFmpegJob
 from config import Config
 from daemon import Daemon
 
-LOG_FILENAME= "/var/log/encodesrv"
+LOG_FILENAME= "/home/ystv/encodesrv.log"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 def main():
@@ -65,9 +65,9 @@ def main():
 			for job in jobs:
 				data = dict(zip(columns, job))
 				for key in data:
-					if key in ["sourcefile", "destination_file"]:
+					if key in ["source_file", "destination_file"]:
 						data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
-				FFmpegJob.THREADPOOL.put(data)
+                                FFmpegJob.THREADPOOL.put(data)
 
 				cur.execute("UPDATE encode_jobs SET status = 'Waiting' WHERE id = %s", (data["id"],))
 				conn.commit()
