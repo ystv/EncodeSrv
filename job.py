@@ -176,7 +176,7 @@ class FFmpegJob (threading.Thread):
                     cmd.wait() # Magic!
                     logging.debug("Done Waiting.")
 
-                except CalledProcessError as e:
+                except subprocess.CalledProcessError as e:
                     logging.exception("Job {}: Pass {} FAILED for {}".format(self.jobreq['id'],_pass,
                         os.path.basename(dirname)))
                     logging.error("{}:{}".format(e.returncode, e.output))
