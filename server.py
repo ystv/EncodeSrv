@@ -1,10 +1,8 @@
 #!/usr/bin/python
 
 # All the imports
-import psycopg2 
-import threading
-import Queue
-import time 
+import psycopg2
+import time
 import sys
 import os.path
 
@@ -13,7 +11,7 @@ import logging
 import logging.handlers
 
 # Other Encodesrv modules
-from job import FFmpegJob
+from job import FFmpegJob, THREADPOOL
 from daemon import Daemon
 
 # And config stuff
@@ -29,42 +27,41 @@ def main():
 
     Sets up logging and database connection, gets job list
     """
-    # Setup a basic logging system to file    
+    # Setup a basic logging system to file
     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format=LOG_FORMAT)
 
-    ## Setup logging to email for critical failures
-    #mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
-                            #fromaddr=Config["mail"]["from"],
-                            #toaddrs=Config["mail"]["to"],
-                            #subject='Encode Job Failure')
-    #mailhandler.setLevel(logging.ERROR)
-    #logging.getLogger('').addHandler(mailhandler)
+    # Setup logging to email for critical failures
+    mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
+                            fromaddr=Config["mail"]["from"],
+                            toaddrs=Config["mail"]["to"],
+                            subject='Encode Job Failure')
+    mailhandler.setLevel(logging.ERROR)
+    logging.getLogger('').addHandler(mailhandler)
 
-    logging.debug("Starting Up")
+    logging.info("Starting Up")
 
-    # Setup a pool of threads to handle encode jobs.
-    FFmpegJob.THREADPOOL = Queue.Queue(0)
-    
     # Reset all crashed jobs
     try:
+        logging.debug('Restarting crashed jobs')
         dbconn = psycopg2.connect(**Config["database"])
         cur = dbconn.cursor()
         cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status !='Done' AND status != 'Error'")
         dbconn.commit()
         cur.close()
-        dbconn.close()    
+        dbconn.close()
     except:
         logging.exception("Failed to connect to database on start, oops")
+        raise
 
-        
-    # Spawn off 2 threads to handle the jobs.    
-    logging.debug("Spawning Threads")
+
+    # Spawn off 2 threads to handle the jobs.
+    logging.info("Spawning Threads")
     for x in xrange(2):
         logging.debug("spawning thread {}".format(x))
         FFmpegJob().start()
-        
+
     columns = ["id", "source_file", "destination_file", "format_id", "status", "video_id"]
-    
+
     # Now we need to get some data.
     while True:
         try:
@@ -72,7 +69,7 @@ def main():
             conn = psycopg2.connect(**Config["database"])
             cur = conn.cursor()
             # Search the DB for jobs not being encoded
-            query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 6-FFmpegJob.THREADPOOL.qsize())
+            query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 6-THREADPOOL.qsize())
             cur.execute(query)
             jobs = cur.fetchall()
             for job in jobs:
@@ -80,7 +77,7 @@ def main():
                 for key in data:
                     if key in ["source_file", "destination_file"]:
                         data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
-                    FFmpegJob.THREADPOOL.put(data)
+                THREADPOOL.put(data)
 
                 cur.execute("UPDATE encode_jobs SET status = 'Waiting' WHERE id = {}".format(data["id"]))
                 conn.commit()
@@ -89,6 +86,7 @@ def main():
             conn.close()
         except:
             logging.exception("ERROR: An unhandled exception occured in the server whilst getting jobs.")
+            raise
         time.sleep(60) #sleep after a run
         while FFmpegJob.THREADPOOL.qsize() > 6:
             logging.debug("Going to sleep for a while")
@@ -99,7 +97,7 @@ class EncodeSrvDaemon(Daemon):
     def run(self):
         main()
 
-    
+
 if __name__ == "__main__":
     daemon = EncodeSrvDaemon('/tmp/encodesrv.pid')
     if len(sys.argv) == 2:
