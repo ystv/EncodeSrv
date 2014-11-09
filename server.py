@@ -21,7 +21,7 @@ from config import Config
 
 
 # Logging constants
-LOG_FILENAME= "~/encodesrv.log"
+LOG_FILENAME= "/opt/EncodeSrv/encodesrv.log"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 def main():
@@ -32,13 +32,13 @@ def main():
     # Setup a basic logging system to file    
     logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format=LOG_FORMAT)
 
-    # Setup logging to email for critical failures
-    mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
-                            fromaddr=Config["mail"]["from"],
-                            toaddrs=Config["mail"]["to"],
-                            subject='Encode Job Failure')
-    mailhandler.setLevel(logging.ERROR)
-    logging.getLogger('').addHandler(mailhandler)
+    ## Setup logging to email for critical failures
+    #mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
+                            #fromaddr=Config["mail"]["from"],
+                            #toaddrs=Config["mail"]["to"],
+                            #subject='Encode Job Failure')
+    #mailhandler.setLevel(logging.ERROR)
+    #logging.getLogger('').addHandler(mailhandler)
 
     logging.debug("Starting Up")
 
