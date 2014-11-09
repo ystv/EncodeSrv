@@ -227,10 +227,10 @@ class FFmpegJob (threading.Thread):
             try:
                 # Enable the video for watch on-demand
                 self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(
-                    (os.path.getsize(args['_TempDest']), self.jobreq['video_id'])))
+                    os.path.getsize(args['_TempDest']), self.jobreq['video_id']))
                 self.dbconn.commit()
             except:
-                logging.debug("Job {}: Unable to update video file status".format(self.jobreq['id']))
+                logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
 
         except IOError:
             logging.exception("Job {}: Failed to copy {} to {}".format(
