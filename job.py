@@ -169,15 +169,17 @@ class FFmpegJob (threading.Thread):
                 FormatString = FFmpegJob.FormatString.format(**args)
 
                 logging.debug("Opening subprocess: {}".format(FormatString))
-                cmd = subprocess.Popen(shlex.split(FormatString), cwd=dirname)
+                try:
+                    cmd = subprocess.check_output(shlex.split(FormatString), cwd=dirname)
 
-                logging.debug("Waiting...")
-                cmd.wait() # Magic!
-                logging.debug("Done Waiting.")
+                    logging.debug("Waiting...")
+                    cmd.wait() # Magic!
+                    logging.debug("Done Waiting.")
 
-                if cmd.returncode != 0:
+                except CalledProcessError as e:
                     logging.exception("Job {}: Pass {} FAILED for {}".format(self.jobreq['id'],_pass,
                         os.path.basename(dirname)))
+                    logging.error("{}:{}".format(e.returncode, e.output))
                     self._update_status("Error", self.jobreq['id'])
                     return
             except:
