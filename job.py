@@ -45,8 +45,8 @@ class FFmpegJob (threading.Thread):
 
     def run(self):
         while True:
-            if not THREADPOOL.empty():
-                self.jobreq = THREADPOOL.get(True)
+            self.jobreq = THREADPOOL.get()
+            if self.jobreq != None:
                 try:
                     self.run_impl()
                 except:
@@ -173,7 +173,7 @@ class FFmpegJob (threading.Thread):
                     cmd = subprocess.check_output(shlex.split(FormatString), cwd=dirname)
 
                     logging.debug("Waiting...")
-                    cmd.wait() # Magic!
+                    #cmd.wait() # Magic!
                     logging.debug("Done Waiting.")
 
                 except subprocess.CalledProcessError as e:
@@ -234,9 +234,10 @@ class FFmpegJob (threading.Thread):
 
         except IOError:
             logging.exception("Job {}: Failed to copy {} to {}".format(
-                self.jobreq['id'],os.path.basename(self.jobreq['source_file']), destleaf
+                self.jobreq['id'],os.path.basename(self.jobreq['source_file']), self.jobreq['destination_file']
                 ))
             self._update_status("Error", self.jobreq['id'])
+            return
 
         # Remove the working directory
         try:
