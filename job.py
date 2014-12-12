@@ -181,6 +181,7 @@ class FFmpegJob (threading.Thread):
                     ])
 
                     while True:
+                        time.sleep(20)
                         i = ffmpeg_process.expect_list(cpl, timeout=None)
                         if (i == 0):
                             break
