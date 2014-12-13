@@ -8,6 +8,7 @@ import shutil
 import logging
 import time
 import subprocess
+import pexpect
 import re
 from datetime import datetime
 from string import maketrans
@@ -170,10 +171,35 @@ class FFmpegJob (threading.Thread):
 
                 logging.debug("Opening subprocess: {}".format(FormatString))
                 try:
-                    cmd = subprocess.check_output(shlex.split(FormatString), cwd=dirname)
+                    ffmpeg_process = pexpect.spawn(FormatString)
 
-                    logging.debug("Waiting...")
-                    #cmd.wait() # Magic!
+                    cpl = ffmpeg_process.compile_pattern_list([
+                        pexpect.EOF,
+                        ".*Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}).*",
+                        ".*time=([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}).*",
+                        '(.+)'
+                    ])
+
+                    while True:
+                        time.sleep(20)
+                        i = ffmpeg_process.expect_list(cpl, timeout=None)
+                        if (i == 0):
+                            break
+                        elif (i == 1):
+                            (hours, mins, secs, frames) = intify(p.match.group(1, 2, 3, 4))
+                            totalTime = (((((hours * 60) + mins) * 60) + secs) * 100) + frames
+                            p.close
+                        elif (i == 2):
+                            (hours, mins, secs, frames) = intify(p.match.group(1, 2, 3, 4))
+                            currentTime = (((((hours * 60) + mins) * 60) + secs) * 100) + frames
+                            progress = (currentTime * 100) / totalTime
+
+                            self._update_status("Encoding Pass {} {}%".format(_pass, progress), self.jobreq['id'])
+
+                            p.close
+                        elif (i == 3):
+                            pass
+
                     logging.debug("Done Waiting.")
 
                 except subprocess.CalledProcessError as e:
