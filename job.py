@@ -47,6 +47,13 @@ class FFmpegJob (threading.Thread):
     def intify(self, T):
         return tuple([int(e) for e in T])
 
+    def _copyfile(self, src, dst, desc):
+        p = subprocess.Popen('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst), stdout=subprocess.PIPE, shell=True)
+
+        while p.poll() != 0:
+            line = p.stdout.readline()
+            self._update_status("{} {}%".format(desc, line.rstrip()), self.jobreq['id'])
+
     def run(self):
         while True:
             self.jobreq = THREADPOOL.get()
@@ -125,7 +132,8 @@ class FFmpegJob (threading.Thread):
 
         # Copy to local folder, rename source
         try:
-            shutil.copyfile(self.jobreq['source_file'], srcpath)
+            self._copyfile(self.jobreq['source_file'], srcpath, 'Copying Source')
+            #shutil.copyfile(self.jobreq['source_file'], srcpath)
         except:
             logging.exception("Job {}: couldn't copy from {} to {}".format(
                 self.jobreq['id'],self.jobreq['source_file'], dirname
@@ -250,7 +258,8 @@ class FFmpegJob (threading.Thread):
                     self._update_status("Error", self.jobreq['id'])
                     return
 
-            shutil.copyfile(args['_TempDest'], self.jobreq['destination_file'])
+            #shutil.copyfile(args['_TempDest'], self.jobreq['destination_file'])
+            self._copyfile(args['_TempDest'], self.jobreq['destination_file'], 'Copying Output')
             self._update_status("Done", self.jobreq['id'])
 
             try:
