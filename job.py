@@ -44,6 +44,9 @@ class FFmpegJob (threading.Thread):
         except:
             logging.exception("Job {}: Failed to update status in DB".format(id))
 
+    def intify(self, T):
+        return tuple([int(e) for e in T])
+
     def run(self):
         while True:
             self.jobreq = THREADPOOL.get()
@@ -182,21 +185,21 @@ class FFmpegJob (threading.Thread):
 
                     while True:
                         time.sleep(20)
-                        i = ffmpeg_process.expect_list(cpl, timeout=None)
+                        i = ffmpeg_process.expect_list(cpl, timeout=10)
                         if (i == 0):
                             break
                         elif (i == 1):
-                            (hours, mins, secs, frames) = intify(p.match.group(1, 2, 3, 4))
+                            (hours, mins, secs, frames) = self.intify(ffmpeg_process.match.group(1, 2, 3, 4))
                             totalTime = (((((hours * 60) + mins) * 60) + secs) * 100) + frames
-                            p.close
+                            ffmpeg_process.close
                         elif (i == 2):
-                            (hours, mins, secs, frames) = intify(p.match.group(1, 2, 3, 4))
+                            (hours, mins, secs, frames) = self.intify(ffmpeg_process.match.group(1, 2, 3, 4))
                             currentTime = (((((hours * 60) + mins) * 60) + secs) * 100) + frames
                             progress = (currentTime * 100) / totalTime
 
                             self._update_status("Encoding Pass {} {}%".format(_pass, progress), self.jobreq['id'])
 
-                            p.close
+                            ffmpeg_process.close
                         elif (i == 3):
                             pass
 
