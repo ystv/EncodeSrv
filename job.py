@@ -171,7 +171,7 @@ class FFmpegJob (threading.Thread):
 
                 logging.debug("Opening subprocess: {}".format(FormatString))
                 try:
-                    ffmpeg_process = pexpect.spawn(FormatString)
+                    ffmpeg_process = pexpect.spawn(FormatString.strip())
 
                     cpl = ffmpeg_process.compile_pattern_list([
                         pexpect.EOF,
