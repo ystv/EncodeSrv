@@ -144,6 +144,8 @@ class FFmpegJob (threading.Thread):
         # Analyse video for normalisation if requested
         if args['normalise_level'] is not '':
             try:
+                self._update_status("Analysing audio", self.jobreq['id'])
+
                 level = float(args['normalise_level'])
                 analysis = subprocess.check_output(["ffmpeg", "-i", srcpath, "-af",
                     "ebur128", "-f", "null", "-y", "/dev/null"], stderr=subprocess.STDOUT)
