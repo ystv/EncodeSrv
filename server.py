@@ -9,6 +9,7 @@ import os.path
 # Logging
 import logging
 import logging.handlers
+import handler
 
 # Other Encodesrv modules
 from job import FFmpegJob, THREADPOOL
@@ -37,6 +38,14 @@ def main():
                             subject='Encode Job Failure')
     mailhandler.setLevel(logging.ERROR)
     logging.getLogger('').addHandler(mailhandler)
+
+    # And lets tell Morrissey for IRC
+    try:
+        morrissey_handler = handler.Morrissey_Handler(**Config['morrissey'])
+        morrissey_handler.setLevel(logging.ERROR)
+        logging.getLogger('').addHandler(morrissey_handler)
+    except:
+        logging.exception('Failed to load morrissey handler.')
 
     logging.info("Starting Up")
 
