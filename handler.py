@@ -15,15 +15,28 @@ class Morrissey_Handler(logging.Handler):
     def __init__(self, host = None, port = None):
 
         logging.Handler.__init__(self)
-        self.host = host
-        self.port = port
-        morrissey = socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
-        morrissey.connect((self.host, self.port))
-        morrissey.sendall('EncodeSrv starting up\n')
-        morrissey.close()
+        self.morrissey = Morrissey(host, port)
+        self.morrissey.report('EncodeSrv starting up')
 
     def emit(self, record):
-        morrissey = socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
-        morrissey.connect((self.host, self.port))
-        morrissey.sendall(record + '\n')
-        morrissey.close()
+
+        self.morrissey.report(record.getMessage())
+
+class Morrissey(socket.socket):
+
+    def __init__(self, host, port):
+
+        port = int(port)
+        socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
+        self.connect((host, port))
+        self.close()
+        self.host = host
+        self.port = port
+
+    def report(self, thing, subdued = False):
+
+        if not subdued:
+            socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
+            self.connect((self.host, self.port))
+            self.sendall(thing + '\n')
+        self.close()
