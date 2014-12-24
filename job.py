@@ -39,6 +39,7 @@ class FFmpegJob (threading.Thread):
     def _update_status(self, status, id):
         """Wrapper to change the DB status of a job """
         try:
+            logging.debug(status)
             self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status,id))
             self.dbconn.commit()
         except:
@@ -48,10 +49,13 @@ class FFmpegJob (threading.Thread):
         return tuple([int(e) for e in T])
 
     def _copyfile(self, src, dst, desc):
+        logging.debug('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst))
         p = subprocess.Popen('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst), stdout=subprocess.PIPE, shell=True)
 
         while p.poll() != 0:
             line = p.stdout.readline()
+            if not line.rstrip().isdigit():
+                raise Exception("Error during copy " + line)
             self._update_status("{} {}%".format(desc, line.rstrip()), self.jobreq['id'])
 
     def run(self):
@@ -272,7 +276,7 @@ class FFmpegJob (threading.Thread):
             except:
                 logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
 
-        except IOError:
+        except:
             logging.exception("Job {}: Failed to copy {} to {}".format(
                 self.jobreq['id'],os.path.basename(self.jobreq['source_file']), self.jobreq['destination_file']
                 ))
