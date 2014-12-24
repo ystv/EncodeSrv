@@ -49,7 +49,7 @@ class FFmpegJob (threading.Thread):
         return tuple([int(e) for e in T])
 
     def _copyfile(self, src, dst, desc):
-        logging.debug('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst))
+        logging.debug('Job {}: (pv -ni 5 "{}" > "{}") 2>&1'.format(self.jobreq['id'], src, dst))
         p = subprocess.Popen('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst), stdout=subprocess.PIPE, shell=True)
 
         while p.poll() != 0:
@@ -105,7 +105,7 @@ class FFmpegJob (threading.Thread):
             srcleaf = "{}-source{}".format(*os.path.splitext(destleaf))
             srcpath = os.path.join(dirname, srcleaf)
         except:
-            logging.exception("Job {} - Debug 2 failed".format(self.jobreq['id']));
+            logging.exception("Job {}: Debug 2 failed".format(self.jobreq['id']));
             self._update_status("Error", self.jobreq['id'])
             return
 
@@ -130,7 +130,7 @@ class FFmpegJob (threading.Thread):
             args['_VPre'] = args['preset_string']
             args['_TempDest'] = os.path.join(dirname, os.path.basename(self.jobreq['destination_file']))
         except:
-            logging.exception("Job {} - Debug 3 failed".format(self.jobreq['id']));
+            logging.exception("Job {}: Debug 3 failed".format(self.jobreq['id']));
             self._update_status("Error", self.jobreq['id'])
             return
 
@@ -160,7 +160,7 @@ class FFmpegJob (threading.Thread):
                 change = level - float(maxvolume)
                 increase_factor = 10 ** ((level - float(maxvolume)) / 20)
 
-                logging.debug('Multiplying volume by {:.2f}'.format(increase_factor))
+                logging.debug('Job {}: Multiplying volume by {:.2f}'.format(self.jobreq['id'], increase_factor))
                 args['args_audio'] += '-af volume={0}'.format(increase_factor)
             except:
                 logging.exception("Job {}: Failed normalising volume".format(self.jobreq['id']))
@@ -179,14 +179,14 @@ class FFmpegJob (threading.Thread):
 
         for _pass in (1, 2):
             try:
-                logging.debug("Updating Status.")
+                logging.debug("Job {}: Updating Status.".format(self.jobreq['id']))
                 self._update_status("Encoding Pass {}".format(_pass), self.jobreq['id'])
 
-                logging.debug("Setting args.")
+                logging.debug("Job {}: Setting args.".format(self.jobreq['id']))
                 args['_Pass'] = _pass
                 FormatString = FFmpegJob.FormatString.format(**args)
 
-                logging.debug("Opening subprocess: {}".format(FormatString))
+                logging.debug("Job {}: Opening subprocess: {}".format(self.jobreq['id'], FormatString))
                 try:
                     ffmpeg_process = pexpect.spawn(FormatString.strip())
 
@@ -217,7 +217,7 @@ class FFmpegJob (threading.Thread):
                         elif (i == 3):
                             pass
 
-                    logging.debug("Done Waiting.")
+                    logging.debug("Job {}: Done Waiting.".format(self.jobreq['id']))
 
                 except subprocess.CalledProcessError as e:
                     logging.exception("Job {}: Pass {} FAILED for {}".format(self.jobreq['id'],_pass,
@@ -226,14 +226,14 @@ class FFmpegJob (threading.Thread):
                     self._update_status("Error", self.jobreq['id'])
                     return
             except:
-                logging.exception("Job {} - Debug 4 failed".format(self.jobreq['id']));
+                logging.exception("Job {}: Debug 4 failed".format(self.jobreq['id']));
                 self._update_status("Error", self.jobreq['id'])
                 return
 
         # Apply MP4 Box if applicable
         try:
             if args['apply_mp4box']:
-                logging.debug("Applying MP4Box to {}".format(os.path.basename(dirname)))
+                logging.debug("Job {}: Applying MP4Box to {}".format(self.jobreq['id'], os.path.basename(dirname)))
                 cmd = subprocess.Popen(shlex.split("MP4Box -inter 500 \"{}\"".format(args['_TempDest'])), cwd=dirname)
 
                 cmd.wait()
@@ -243,7 +243,7 @@ class FFmpegJob (threading.Thread):
                     self._update_status("Error", self.jobreq['id'])
                     return
         except:
-            logging.exception("Job {} - Debug 5 failed".format(self.jobreq['id']));
+            logging.exception("Job {}: Debug 5 failed".format(self.jobreq['id']));
             self._update_status("Error", self.jobreq['id'])
             return
 
@@ -252,10 +252,10 @@ class FFmpegJob (threading.Thread):
         # Copy file to intended destination
         self._update_status("Moving File", self.jobreq['id'])
         try:
-            logging.debug("Moving to: {}".format(self.jobreq['destination_file']))
+            logging.debug("Job {}: Moving to {}".format(self.jobreq['id'], self.jobreq['destination_file']))
             if not os.path.exists(os.path.dirname(self.jobreq['destination_file'])):
-                logging.debug("Directory does not exist: {}. Creating it now.".format(
-                    os.path.dirname(self.jobreq['destination_file'])))
+                logging.debug("Job {}: Directory does not exist: {}. Creating it now.".format(
+                    self.jobreq['id'], os.path.dirname(self.jobreq['destination_file'])))
                 try:
                     os.makedirs(os.path.dirname(self.jobreq['destination_file']))
                 except OSError:
@@ -293,4 +293,4 @@ class FFmpegJob (threading.Thread):
         del self.dbcur
         del self.dbconn
 
-        logging.debug("Job {} ({}) done!".format(self.jobreq['id'],os.path.basename(args['_TempDest'])))
+        logging.info("Job {}: ({}) done!".format(self.jobreq['id'],os.path.basename(args['_TempDest'])))

@@ -42,9 +42,9 @@ def main():
     # And lets tell Morrissey for IRC
     try:
         morrissey_handler = handler.Morrissey_Handler(**Config['morrissey'])
-        morrissey_handler.setLevel(logging.ERROR)
+        morrissey_handler.setLevel(logging.INFO)
         logging.getLogger('').addHandler(morrissey_handler)
-        logging.debug('Started Morrissey handler ')
+        logging.debug('Started Morrissey handler.')
     except:
         logging.exception('Failed to load morrissey handler.')
 
