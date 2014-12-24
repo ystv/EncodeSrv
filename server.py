@@ -44,6 +44,7 @@ def main():
         morrissey_handler = handler.Morrissey_Handler(**Config['morrissey'])
         morrissey_handler.setLevel(logging.ERROR)
         logging.getLogger('').addHandler(morrissey_handler)
+        logging.debug('Started Morrissey handler ')
     except:
         logging.exception('Failed to load morrissey handler.')
 

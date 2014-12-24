@@ -20,10 +20,10 @@ class Morrissey_Handler(logging.Handler):
         morrissey = socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
         morrissey.connect((self.host, self.port))
         morrissey.sendall('EncodeSrv starting up\n')
-        morrissey.socket.close()
+        morrissey.close()
 
     def emit(self, record):
         morrissey = socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
-        morrisseyconnect((self.host, self.port))
+        morrissey.connect((self.host, self.port))
         morrissey.sendall(record + '\n')
-        morrissey.socket.close()
+        morrissey.close()
