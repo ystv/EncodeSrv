@@ -8,6 +8,7 @@
 #-------------------------------------------------------------------------------
 
 import logging
+import socket
 
 class Morrissey_Handler(logging.Handler):
 
@@ -16,9 +17,13 @@ class Morrissey_Handler(logging.Handler):
         logging.Handler.__init__(self)
         self.host = host
         self.port = port
+        morrissey = socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
+        morrissey.connect((self.host, self.port))
+        morrissey.sendall('EncodeSrv starting up\n')
+        morrissey.socket.close()
 
     def emit(self, record):
-        socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
-        self.connect((self.host, self.port))
-        self.sendall(record + '\n')
-        self.close()
+        morrissey = socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
+        morrisseyconnect((self.host, self.port))
+        morrissey.sendall(record + '\n')
+        morrissey.socket.close()
