@@ -39,7 +39,7 @@ class FFmpegJob (threading.Thread):
     def _update_status(self, status, id):
         """Wrapper to change the DB status of a job """
         try:
-            logging.debug(status)
+            logging.debug('Job {}: '.format(id) + status)
             self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status,id))
             self.dbconn.commit()
         except:
