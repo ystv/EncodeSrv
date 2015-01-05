@@ -71,7 +71,7 @@ class FFmpegJob (threading.Thread):
 
     def run_impl(self):
 
-        logging.info('starting job {}'.format(self.jobreq['id']))
+        logging.info('starting job {}, {}'.format(self.jobreq['id'], self.jobreq['source_file']))
 
         # Create database connection
         try:
@@ -293,4 +293,4 @@ class FFmpegJob (threading.Thread):
         del self.dbcur
         del self.dbconn
 
-        logging.info("Job {}: ({}) done!".format(self.jobreq['id'],os.path.basename(args['_TempDest'])))
+        logging.info("Job {}: ({}) done!".format(self.jobreq['id'],self.jobreq['destination_file']))
