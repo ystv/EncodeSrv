@@ -14,4 +14,8 @@ Config = {
 	},
 	"tmpfolder": "/data/tmpencoding",
 	"mntfolder": "/",
+	"morrissey": {
+		"host"	: "example.com",
+		"port"	: "1234"
+	},
 }

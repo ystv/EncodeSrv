@@ -9,6 +9,7 @@ import os.path
 # Logging
 import logging
 import logging.handlers
+import handler
 
 # Other Encodesrv modules
 from job import FFmpegJob, THREADPOOL
@@ -19,7 +20,7 @@ from config import Config
 
 
 # Logging constants
-LOG_FILENAME= "/opt/EncodeSrv/encodesrv.log"
+LOG_FILENAME= "/home/ystv/encodesrv.log"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 def main():
@@ -38,6 +39,15 @@ def main():
     mailhandler.setLevel(logging.ERROR)
     logging.getLogger('').addHandler(mailhandler)
 
+    # And lets tell Morrissey for IRC
+    try:
+        morrissey_handler = handler.Morrissey_Handler(**Config['morrissey'])
+        morrissey_handler.setLevel(logging.INFO)
+        logging.getLogger('').addHandler(morrissey_handler)
+        logging.debug('Started Morrissey handler.')
+    except:
+        logging.exception('Failed to load morrissey handler.')
+
     logging.info("Starting Up")
 
     # Reset all crashed jobs
@@ -54,9 +64,9 @@ def main():
         raise
 
 
-    # Spawn off 2 threads to handle the jobs.
+    # Spawn off 3 threads to handle the jobs.
     logging.info("Spawning Threads")
-    for x in xrange(2):
+    for x in xrange(3):
         logging.debug("spawning thread {}".format(x))
         FFmpegJob().start()
 
@@ -88,7 +98,7 @@ def main():
             logging.exception("ERROR: An unhandled exception occured in the server whilst getting jobs.")
             raise
         time.sleep(60) #sleep after a run
-        while FFmpegJob.THREADPOOL.qsize() > 6:
+        while THREADPOOL.qsize() > 6:
             logging.debug("Going to sleep for a while")
             time.sleep(60) #if the queue is still full, sleep a bit longer
     return
