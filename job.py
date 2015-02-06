@@ -53,12 +53,14 @@ class FFmpegJob (threading.Thread):
         p = subprocess.Popen('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst), stdout=subprocess.PIPE, shell=True)
 
 
-#        while p.poll() != 0:
-        line = p.communicate()[0].rstrip().split('\n')[-1]
-#        line = p.stdout.readline()
-        if not line.rstrip().isdigit():
-            raise Exception("Error during copy " + line)
-        self._update_status("{} {}%".format(desc, line.rstrip()), self.jobreq['id'])
+        while p.poll() != 0:
+#        line = p.communicate()[0].rstrip().split('\n')[-1]
+            line = p.stdout.readline()
+            if line.strip() == '':
+                continue
+            if not line.rstrip().isdigit():
+                raise Exception("Error during copy " + line)
+            self._update_status("{} {}%".format(desc, line.rstrip()), self.jobreq['id'])
 
     def run(self):
         while True:
