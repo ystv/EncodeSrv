@@ -54,13 +54,20 @@ class FFmpegJob (threading.Thread):
 
 
         while p.poll() != 0:
-#        line = p.communicate()[0].rstrip().split('\n')[-1]
             line = p.stdout.readline()
             if line.strip() == '':
                 continue
             if not line.rstrip().isdigit():
                 raise Exception("Error during copy " + line)
             self._update_status("{} {}%".format(desc, line.rstrip()), self.jobreq['id'])
+    
+    def _nice_name(self):
+        """
+        Gets a nice to look at name and format for the job"""
+        
+        self.dbcur.execute("SELECT format_name FROM encode_formats WHERE id = {}".format(self.jobreq['format_id']) )
+        fetched = [x if x is not None else '' for x in self.dbcur.fetchone()]
+        return os.path.basename(self.jobreq['source_file']) + ' (' + fetched[0] + ')'
 
     def run(self):
         while True:
@@ -75,8 +82,6 @@ class FFmpegJob (threading.Thread):
 
     def run_impl(self):
 
-        logging.info('starting job {}, {}'.format(self.jobreq['id'], self.jobreq['source_file']))
-
         # Create database connection
         try:
             self.dbconn = psycopg2.connect(**Config['database'])
@@ -84,6 +89,8 @@ class FFmpegJob (threading.Thread):
         except:
             logging.exception("Job {}: Could not connect to database".format(self.jobreq['id']))
             return
+        
+        logging.info('starting job {}, {}'.format(self.jobreq['id'], self._nice_name()))
 
         # Check whether source file exists
         try:
@@ -297,4 +304,4 @@ class FFmpegJob (threading.Thread):
         del self.dbcur
         del self.dbconn
 
-        logging.info("Job {}: ({}) done!".format(self.jobreq['id'],self.jobreq['destination_file']))
+        logging.info("Job {}: ({}) done!".format(self.jobreq['id'], self._nice_name()))
