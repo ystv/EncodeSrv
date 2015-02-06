@@ -199,34 +199,9 @@ class FFmpegJob (threading.Thread):
 
                 logging.debug("Job {}: Opening subprocess: {}".format(self.jobreq['id'], FormatString))
                 try:
-                    ffmpeg_process = pexpect.spawn(FormatString.strip())
+                    cmd = subprocess.check_output(shlex.split(FormatString), cwd=dirname)
 
-                    cpl = ffmpeg_process.compile_pattern_list([
-                        pexpect.EOF,
-                        ".*Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}).*",
-                        ".*time=([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}).*",
-                        '(.+)'
-                    ])
-
-                    while True:
-                        time.sleep(20)
-                        i = ffmpeg_process.expect_list(cpl, timeout=10)
-                        if (i == 0):
-                            break
-                        elif (i == 1):
-                            (hours, mins, secs, frames) = self.intify(ffmpeg_process.match.group(1, 2, 3, 4))
-                            totalTime = (((((hours * 60) + mins) * 60) + secs) * 100) + frames
-                            ffmpeg_process.close
-                        elif (i == 2):
-                            (hours, mins, secs, frames) = self.intify(ffmpeg_process.match.group(1, 2, 3, 4))
-                            currentTime = (((((hours * 60) + mins) * 60) + secs) * 100) + frames
-                            progress = (currentTime * 100) / totalTime
-
-                            self._update_status("Encoding Pass {} {}%".format(_pass, progress), self.jobreq['id'])
-
-                            ffmpeg_process.close
-                        elif (i == 3):
-                            pass
+                    cmd.wait() # Magic!
 
                     logging.debug("Job {}: Done Waiting.".format(self.jobreq['id']))
 
