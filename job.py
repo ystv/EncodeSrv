@@ -201,8 +201,6 @@ class FFmpegJob (threading.Thread):
                 try:
                     cmd = subprocess.check_output(shlex.split(FormatString), cwd=dirname)
 
-                    cmd.wait() # Magic!
-
                     logging.debug("Job {}: Done Waiting.".format(self.jobreq['id']))
 
                 except subprocess.CalledProcessError as e:
