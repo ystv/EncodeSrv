@@ -274,7 +274,7 @@ class FFmpegJob (threading.Thread):
             self._update_status("Encoded", self.jobreq['id'])
             logging.exception("Job {}: Failed to remove directory: {}".format(self.jobreq['id'],os.path.dirname(args['_TempDest'])));
 
+        logging.info("Job {}: ({}) done!".format(self.jobreq['id'], self._nice_name()))
+        
         del self.dbcur
         del self.dbconn
-
-        logging.info("Job {}: ({}) done!".format(self.jobreq['id'], self._nice_name()))
