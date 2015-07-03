@@ -252,7 +252,7 @@ class FFmpegJob (threading.Thread):
             self._copyfile(args['_TempDest'], self.jobreq['destination_file'], 'Copying Output')
             self._update_status("Done", self.jobreq['id'])
 
-            def get_video_size(self):
+            def get_video_size():
                 tempdest = args['_TempDest']
 
                 # Gets the size of the thumbnails directory instead of the placeholder filepath
