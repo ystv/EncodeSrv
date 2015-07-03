@@ -39,7 +39,7 @@ class FFmpegJob (threading.Thread):
         if 'thumbs/' in self.jobreq['destination_file']:
             return sum([os.path.getsize(f) for f in os.listdir(args['_TempDest'].replace("/%05d.jpg","")) if os.path.isfile(f)])
         else:
-            return os.path.getsize(tempdest)
+            return os.path.getsize(args['_TempDest'])
 
     def _update_status(self, status, id):
         """Wrapper to change the DB status of a job """
