@@ -35,6 +35,11 @@ class FFmpegJob (threading.Thread):
     -y \"{_TempDest}\"
     """.translate(maketrans("\n\t\r", "\x20"*3))
 
+    def _get_video_size(self):
+        if 'thumbs/' in self.jobreq['destination_file']:
+            return sum([os.path.getsize(f) for f in os.listdir(args['_TempDest'].replace("/%05d.jpg","")) if os.path.isfile(f)])
+        else:
+            return os.path.getsize(args['_TempDest'])
 
     def _update_status(self, status, id):
         """Wrapper to change the DB status of a job """
@@ -254,8 +259,7 @@ class FFmpegJob (threading.Thread):
 
             try:
                 # Enable the video for watch on-demand
-                self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(
-                    os.path.getsize(args['_TempDest']), self.jobreq['video_id']))
+                self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(self._get_video_size(), self.jobreq['video_id']))
                 self.dbconn.commit()
             except:
                 logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
