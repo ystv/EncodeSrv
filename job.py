@@ -252,10 +252,18 @@ class FFmpegJob (threading.Thread):
             self._copyfile(args['_TempDest'], self.jobreq['destination_file'], 'Copying Output')
             self._update_status("Done", self.jobreq['id'])
 
+            def get_video_size(self):
+                tempdest = args['_TempDest']
+
+                # Gets the size of the thumbnails directory instead of the placeholder filepath
+                if 'thumbs/ in self.jobreq['destination_file']:
+                    tempdest = (args['_TempDest']).replace("/%05d.jpg","")
+    
+                return os.path.getsize(tempdest)
+
             try:
                 # Enable the video for watch on-demand
-                self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(
-                    os.path.getsize(args['_TempDest']), self.jobreq['video_id']))
+                self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(self.get_video_size(), self.jobreq['video_id']))
                 self.dbconn.commit()
             except:
                 logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
