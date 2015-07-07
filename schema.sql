@@ -1,5 +1,4 @@
 SET statement_timeout = 0;
-SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
@@ -77,6 +76,7 @@ COMMENT ON COLUMN encode_formats.video_bitrate_tolerance IS 'video bitrate toler
 
 --
 -- Name: COLUMN encode_formats.video_codec; Type: COMMENT; Schema: public
+--
 
 COMMENT ON COLUMN encode_formats.video_codec IS 'video codec (e.g. libx264)';
 
