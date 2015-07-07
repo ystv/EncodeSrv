@@ -49,7 +49,7 @@ class FFmpegJob (threading.Thread):
         {"arg": "\"{_TempDest}\"", "parm": "_TempDest"},
     ]
 
-    def _get_video_size(self):
+    def _get_video_size(self, args):
         if 'thumbs/' in self.jobreq['destination_file']:
             return sum([os.path.getsize(f) for f in os.listdir(args['_TempDest'].replace("/%05d.jpg","")) if os.path.isfile(f)])
         else:
@@ -224,8 +224,8 @@ class FFmpegJob (threading.Thread):
                             finalargs.append(format.format(**args))
                     else:
                         finalargs.append(arg['arg'])
-				
-			
+                        
+                        
                 FormatString = ' '.join(finalargs)
 
                 logging.debug("Job {}: Opening subprocess: {}".format(self.jobreq['id'], FormatString))
@@ -296,7 +296,7 @@ class FFmpegJob (threading.Thread):
             if self.jobreq['video_id']:
                 try:
                     # Enable the video for watch on-demand
-                    self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(self._get_video_size(), self.jobreq['video_id']))
+                    self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(self._get_video_size(args), self.jobreq['video_id']))
                     self.dbconn.commit()
                 except:
                     logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
