@@ -1,5 +1,6 @@
 SET statement_timeout = 0;
-SET client_encoding = 'SQL_ASCII';
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
@@ -9,21 +10,6 @@ SET search_path = public, pg_catalog;
 SET default_tablespace = '';
 
 SET default_with_oids = false;
-
---
--- Name: encodestatus; Type: TYPE; Schema: public; Tablespace: 
---
-CREATE TYPE encodestatus AS ENUM (
-    'Not Encoding',
-    'Waiting',
-    'Encoding Pass 1',
-    'Encoding Pass 2',
-    'Encoded',
-    'Moving File',
-    'Adding to Website',
-    'Done',
-    'Error'
-);
 
 --
 -- Name: encode_formats; Type: TABLE; Schema: public; Tablespace: 
@@ -48,8 +34,10 @@ CREATE TABLE encode_formats (
     args_end text,
     apply_mp4box boolean DEFAULT false NOT NULL,
     file_extension character varying(5) DEFAULT 'mp4'::character varying NOT NULL,
-    preset_string text,
-    normalise_level integer
+    preset_string character varying DEFAULT '-preset slow'::character varying,
+    normalise_level integer,
+    ef_priority integer NOT NULL,
+    pass integer DEFAULT 2
 );
 
 --
@@ -89,7 +77,6 @@ COMMENT ON COLUMN encode_formats.video_bitrate_tolerance IS 'video bitrate toler
 
 --
 -- Name: COLUMN encode_formats.video_codec; Type: COMMENT; Schema: public
---
 
 COMMENT ON COLUMN encode_formats.video_codec IS 'video codec (e.g. libx264)';
 
@@ -179,17 +166,17 @@ COMMENT ON COLUMN encode_formats.file_extension IS 'Extension of the resulting f
 
 
 --
--- Name: COLUMN encode_formats.preset_string; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_formats.ef_priority; Type: COMMENT; Schema: public
 --
 
-COMMENT ON COLUMN encode_formats.preset_string IS 'A preset as understood by ffmpeg (e.g "medium")';
+COMMENT ON COLUMN encode_formats.ef_priority IS 'Default priority for this format';
 
 
 --
--- Name: COLUMN encode_formats.normalise_level; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_formats.pass; Type: COMMENT; Schema: public
 --
 
-COMMENT ON COLUMN encode_formats.normalise_level IS 'Optional LUFS level to normalise to (e.g -23)';
+COMMENT ON COLUMN encode_formats.pass IS 'Whether the format is 1 or 2 pass';
 
 
 --
@@ -218,7 +205,8 @@ ALTER TABLE ONLY encode_formats
     ADD CONSTRAINT encode_formats_pkey PRIMARY KEY (id);
 
 SET statement_timeout = 0;
-SET client_encoding = 'SQL_ASCII';
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SET check_function_bodies = false;
 SET client_min_messages = warning;
@@ -238,7 +226,7 @@ CREATE TABLE encode_jobs (
     source_file text NOT NULL,
     destination_file text NOT NULL,
     format_id integer NOT NULL,
-    status encodestatus NOT NULL,
+    status character varying(64) NOT NULL,
     video_id integer,
     working_directory text,
     user_id integer,
@@ -246,75 +234,71 @@ CREATE TABLE encode_jobs (
 );
 
 --
--- Name: TABLE encode_jobs; Type: COMMENT; Schema: public
+-- Name: TABLE encode_jobs; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON TABLE encode_jobs IS 'Stores the Encode Jobs for EncodeSrv';
 
 
 --
--- Name: COLUMN encode_jobs.source_file; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.source_file; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON COLUMN encode_jobs.source_file IS 'Path to source file (e.g. /mnt/UserData/Shows/ManMan/Ep1/10_Man-Man-episode1_sum06.avi)';
 
 
 --
--- Name: COLUMN encode_jobs.destination_file; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.destination_file; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON COLUMN encode_jobs.destination_file IS 'Path to destination file (e.g. /mnt/videos/web/ipod/10_Man-Man-episode1_sum06.mp4) ';
 
 
 --
--- Name: COLUMN encode_jobs.format_id; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.format_id; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON COLUMN encode_jobs.format_id IS 'ID to identify format type';
 
 
 --
--- Name: COLUMN encode_jobs.status; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.status; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
-COMMENT ON COLUMN encode_jobs.status IS 'Indicates progress of the encode job. Set to "Not Encoding" initially';
+COMMENT ON COLUMN encode_jobs.status IS 'Indicates progress of the encode job. ';
 
 
 --
--- Name: COLUMN encode_jobs.video_id; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.video_id; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON COLUMN encode_jobs.video_id IS 'ID of the relevant video_id. These entires are filled in before the video actaully exists. ';
 
 
 --
--- Name: COLUMN encode_jobs.working_directory; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.working_directory; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON COLUMN encode_jobs.working_directory IS 'Stores the working directory once a job has started';
 
 
 --
--- Name: COLUMN encode_jobs.user_id; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.user_id; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
 COMMENT ON COLUMN encode_jobs.user_id IS 'ID of the user that requested the job';
 
 
 --
--- Name: COLUMN encode_jobs.priority; Type: COMMENT; Schema: public
+-- Name: COLUMN encode_jobs.priority; Type: COMMENT; Schema: public; Owner: ystvweb
 --
 
-COMMENT ON COLUMN encode_jobs.priority IS 'Mainly for batch encode jobs like re-encodes. Could be used for giving certain events higher priority. Defaults to 5. Higher numbers= lower priority';
+COMMENT ON COLUMN encode_jobs.priority IS 'Mainly for batch encode jobs like re-encodes. Could be used for giving certain events higher priority. Defaults to 5. Higher numbers = higher priority';
 
 
 --
--- Name: encode_jobs_pkey; Type: CONSTRAINT; Schema: public; Tablespace: 
+-- Name: encode_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: ystvweb; Tablespace: 
 --
 
 ALTER TABLE ONLY encode_jobs
     ADD CONSTRAINT encode_jobs_pkey PRIMARY KEY (id);
-
-
-
-
