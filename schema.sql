@@ -234,70 +234,70 @@ CREATE TABLE encode_jobs (
 );
 
 --
--- Name: TABLE encode_jobs; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: TABLE encode_jobs; Type: COMMENT; Schema: public
 --
 
 COMMENT ON TABLE encode_jobs IS 'Stores the Encode Jobs for EncodeSrv';
 
 
 --
--- Name: COLUMN encode_jobs.source_file; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.source_file; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.source_file IS 'Path to source file (e.g. /mnt/UserData/Shows/ManMan/Ep1/10_Man-Man-episode1_sum06.avi)';
 
 
 --
--- Name: COLUMN encode_jobs.destination_file; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.destination_file; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.destination_file IS 'Path to destination file (e.g. /mnt/videos/web/ipod/10_Man-Man-episode1_sum06.mp4) ';
 
 
 --
--- Name: COLUMN encode_jobs.format_id; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.format_id; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.format_id IS 'ID to identify format type';
 
 
 --
--- Name: COLUMN encode_jobs.status; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.status; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.status IS 'Indicates progress of the encode job. ';
 
 
 --
--- Name: COLUMN encode_jobs.video_id; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.video_id; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.video_id IS 'ID of the relevant video_id. These entires are filled in before the video actaully exists. ';
 
 
 --
--- Name: COLUMN encode_jobs.working_directory; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.working_directory; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.working_directory IS 'Stores the working directory once a job has started';
 
 
 --
--- Name: COLUMN encode_jobs.user_id; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.user_id; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.user_id IS 'ID of the user that requested the job';
 
 
 --
--- Name: COLUMN encode_jobs.priority; Type: COMMENT; Schema: public; Owner: ystvweb
+-- Name: COLUMN encode_jobs.priority; Type: COMMENT; Schema: public
 --
 
 COMMENT ON COLUMN encode_jobs.priority IS 'Mainly for batch encode jobs like re-encodes. Could be used for giving certain events higher priority. Defaults to 5. Higher numbers = higher priority';
 
 
 --
--- Name: encode_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: ystvweb; Tablespace: 
+-- Name: encode_jobs_pkey; Type: CONSTRAINT; Schema: public; Tablespace: 
 --
 
 ALTER TABLE ONLY encode_jobs
