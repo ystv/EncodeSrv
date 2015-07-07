@@ -26,15 +26,34 @@ class FFmpegJob (threading.Thread):
 
     THREADPOOL = None
 
-    FormatString = """
-    ffmpeg -i \"{_SourceFile}\" -passlogfile \"{_PassLogFile}\"
-    {args_beginning} -vcodec {video_codec} -b:v {video_bitrate}
-    {_VPre} -pass {_Pass} -s {video_resolution} -aspect {aspect_ratio}
-    {args_video} -acodec {audio_codec} -ar {audio_samplerate}
-    -ab {audio_bitrate} {args_audio} -threads 0 {args_end} -f {container}
-    -y \"{_TempDest}\"
-    """.translate(maketrans("\n\t\r", "\x20"*3))
+    ffmpegargs = [
+	{"arg": "ffmpeg"},
+        {"arg": "-i \"{_SourceFile}\"", "parm": "_SourceFile"},
+        {"arg": "-passlogfile \"{_PassLogFile}\"", "parm": "_PassLogFile"},
+        {"arg": "{args_beginning}", "parm": "args_beginning"},
+        {"arg": "-vcodec {video_codec}", "parm": "video_codec"},
+        {"arg": "-b:v {video_bitrate}", "parm": "video_bitrate"},
+        {"arg": "{_VPre}", "parm": "_VPre"},
+        {"arg": "-pass {_Pass}", "parm": "_Pass"},
+        {"arg": "-s {video_resolution}", "parm": "video_resolution"},
+        {"arg": "-aspect {aspect_ratio}", "parm": "aspect_ratio"},
+        {"arg": "{args_video}", "parm": "args_video"},
+        {"arg": "-acodec {audio_codec}", "parm": "audio_codec"},
+        {"arg": "-ar {audio_samplerate}", "parm": "audio_samplerate"},
+        {"arg": "-ab {audio_bitrate}", "parm": "audio_bitrate"},
+        {"arg": "{args_audio}", "parm": "args_audio"},
+        {"arg": "-threads 0"},
+        {"arg": "{args_end}", "parm": "args_end"},
+        {"arg": "-f {container}", "parm": "container"},
+        {"arg": "-y"},
+        {"arg": "\"{_TempDest}\"", "parm": "_TempDest"},
+    ]
 
+    def _get_video_size(self):
+        if 'thumbs/' in self.jobreq['destination_file']:
+            return sum([os.path.getsize(f) for f in os.listdir(args['_TempDest'].replace("/%05d.jpg","")) if os.path.isfile(f)])
+        else:
+            return os.path.getsize(args['_TempDest'])
 
     def _update_status(self, status, id):
         """Wrapper to change the DB status of a job """
@@ -112,8 +131,9 @@ class FFmpegJob (threading.Thread):
             return
 
         try:
-            destleaf = os.path.basename(self.jobreq['destination_file'])
-            srcleaf = "{}-source{}".format(*os.path.splitext(destleaf))
+            destleaf = self.jobreq['id']
+            destleaf = os.path.splitext(os.path.basename(self.jobreq['source_file']))[1]
+            srcleaf = "{}-source{}".format(self.jobreq['id'], destleaf)
             srcpath = os.path.join(dirname, srcleaf)
         except:
             logging.exception("Job {}: Debug 2 failed".format(self.jobreq['id']));
@@ -127,7 +147,7 @@ class FFmpegJob (threading.Thread):
             cols = ('container', 'video_bitrate', 'video_bitrate_tolerance','video_codec',
                     'video_resolution', 'audio_bitrate', 'audio_samplerate','audio_codec',
                     'vpre_string', 'preset_string', 'aspect_ratio', 'args_beginning', 'args_video',
-                    'args_audio', 'args_end', 'apply_mp4box', 'normalise_level')
+                    'args_audio', 'args_end', 'apply_mp4box', 'normalise_level', 'pass')
             self.dbcur.execute("SELECT {} FROM encode_formats WHERE id = {}".format(
                 ", ".join(cols), self.jobreq['format_id']) )
 
@@ -188,14 +208,25 @@ class FFmpegJob (threading.Thread):
             self._update_status("Error", self.jobreq['id'])
             return
 
-        for _pass in (1, 2):
+        for _pass in range(1, args['pass'] + 1):
             try:
                 logging.debug("Job {}: Updating Status.".format(self.jobreq['id']))
                 self._update_status("Encoding Pass {}".format(_pass), self.jobreq['id'])
 
                 logging.debug("Job {}: Setting args.".format(self.jobreq['id']))
                 args['_Pass'] = _pass
-                FormatString = FFmpegJob.FormatString.format(**args)
+
+                finalargs = []
+                for arg in FFmpegJob.ffmpegargs:
+                    if 'parm' in arg:
+                        if arg['parm'] in args and args[arg['parm']]:
+                            format = arg['arg'].translate(maketrans("\n\t\r", "\x20"*3))
+                            finalargs.append(format.format(**args))
+                    else:
+                        finalargs.append(arg['arg'])
+				
+			
+                FormatString = ' '.join(finalargs)
 
                 logging.debug("Job {}: Opening subprocess: {}".format(self.jobreq['id'], FormatString))
                 try:
@@ -249,16 +280,26 @@ class FFmpegJob (threading.Thread):
                     return
 
             #shutil.copyfile(args['_TempDest'], self.jobreq['destination_file'])
-            self._copyfile(args['_TempDest'], self.jobreq['destination_file'], 'Copying Output')
+            p = re.compile('%([0-9]+)d')
+            if p.search(args['_TempDest']):
+                dest = os.path.split(re.sub('%([0-9]+)d', '\d+', args['_TempDest']))
+                files = [f for f in os.listdir(dest[0]) if re.match(dest[1], f)]
+                i = 0
+                for f in files:
+                    self._update_status("Moving files {}%".format((i * 100) / len(files)), self.jobreq['id'])
+                    i = i + 1
+                    shutil.copyfile(os.path.join(dest[0], f), os.path.join(os.path.dirname(self.jobreq['destination_file']), f))
+            else:
+                self._copyfile(args['_TempDest'], self.jobreq['destination_file'], 'Copying Output')
             self._update_status("Done", self.jobreq['id'])
 
-            try:
-                # Enable the video for watch on-demand
-                self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(
-                    os.path.getsize(args['_TempDest']), self.jobreq['video_id']))
-                self.dbconn.commit()
-            except:
-                logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
+            if self.jobreq['video_id']:
+                try:
+                    # Enable the video for watch on-demand
+                    self.dbcur.execute("UPDATE video_files SET is_enabled = True, size = {} WHERE id = {}".format(self._get_video_size(), self.jobreq['video_id']))
+                    self.dbconn.commit()
+                except:
+                    logging.exception("Job {}: Unable to update video file status".format(self.jobreq['id']))
 
         except:
             logging.exception("Job {}: Failed to copy {} to {}".format(
@@ -274,7 +315,7 @@ class FFmpegJob (threading.Thread):
             self._update_status("Encoded", self.jobreq['id'])
             logging.exception("Job {}: Failed to remove directory: {}".format(self.jobreq['id'],os.path.dirname(args['_TempDest'])));
 
+        logging.info("Job {}: ({}) done!".format(self.jobreq['id'], self._nice_name()))
+        
         del self.dbcur
         del self.dbconn
-
-        logging.info("Job {}: ({}) done!".format(self.jobreq['id'], self._nice_name()))

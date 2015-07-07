@@ -27,16 +27,22 @@ class Morrissey(socket.socket):
     def __init__(self, host, port):
 
         port = int(port)
-        socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
-        self.connect((host, port))
-        self.close()
+        try:
+            socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
+            self.connect((host, port))
+            self.close()
+        except:
+            pass
         self.host = host
         self.port = port
 
     def report(self, thing, subdued = False):
 
-        if not subdued:
-            socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
-            self.connect((self.host, self.port))
-            self.sendall(thing + '\n')
-        self.close()
+        try:
+            if not subdued:
+                socket.socket.__init__(self, socket.AF_INET, socket.SOCK_STREAM)
+                self.connect((self.host, self.port))
+                self.sendall(thing + '\n')
+            self.close()
+        except:
+            pass
