@@ -9,6 +9,7 @@ import os.path
 # Logging
 import logging.handlers
 import slack
+import encodeirc
 
 # Other Encodesrv modules
 from job import FFmpegJob, THREADPOOL
@@ -43,7 +44,13 @@ def main():
         slackhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(slackhandler)
 
-
+    if Config['irc']['enabled']:
+        irchandler = encodeirc.Encode_irc(**Config['irc'])
+        
+        while not irchandler.is_joined():
+            pass
+        irchandler.setLevel(logging.INFO)
+        logging.getLogger().addHandler(irchandler)
 
     logging.info("Starting Up")
 
