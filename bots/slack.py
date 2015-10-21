@@ -2,6 +2,7 @@ import logging
 import queue
 import slackclient
 import threading
+import time
 
 from . import common
 
@@ -43,6 +44,8 @@ class Slack_rtm_thread(threading.Thread):
                                 self._slack_respond(msg)
                         except KeyError:
                             continue
+                finally:
+                    time.sleep(0.1)
     
     def _slack_respond(self, msg):
         
