@@ -1,20 +1,18 @@
 # Imports
 import threading
 import psycopg2
-import Queue
+import queue
 import os.path
 import shlex
 import shutil
 import logging
 import time
 import subprocess
-import pexpect
 import re
 from datetime import datetime
-from string import maketrans
 from config import Config
 
-THREADPOOL = Queue.Queue(0)
+THREADPOOL = queue.Queue(0)
 
 class FFmpegJob (threading.Thread):
     """Encode job handler
@@ -55,14 +53,14 @@ class FFmpegJob (threading.Thread):
         else:
             return os.path.getsize(args['_TempDest'])
 
-    def _update_status(self, status, id):
+    def _update_status(self, status, id_):
         """Wrapper to change the DB status of a job """
         try:
             logging.debug('Job {}: '.format(id) + status)
-            self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status,id))
+            self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status,id_))
             self.dbconn.commit()
         except:
-            logging.exception("Job {}: Failed to update status in DB".format(id))
+            logging.exception("Job {}: Failed to update status in DB".format(id_))
 
     def intify(self, T):
         return tuple([int(e) for e in T])
@@ -124,7 +122,7 @@ class FFmpegJob (threading.Thread):
             dirname = os.path.join(Config['tmpfolder'], "{}--encode--{}".format(
                 os.path.basename(self.jobreq['source_file']), str(datetime.now()).replace(' ', '-')
             ))
-            os.mkdir(dirname, 0775)
+            os.mkdir(dirname, 775)
         except:
             logging.exception("Job {} - Failed to create temporary directory".format(self.jobreq['id']))
             self._update_status("Error", self.jobreq['id'])
@@ -188,7 +186,6 @@ class FFmpegJob (threading.Thread):
                     flags=re.MULTILINE).group(1)
 
                 # Calculate normalisation factor
-                change = level - float(maxvolume)
                 increase_factor = 10 ** ((level - float(maxvolume)) / 20)
 
                 logging.debug('Job {}: Multiplying volume by {:.2f}'.format(self.jobreq['id'], increase_factor))
@@ -220,8 +217,8 @@ class FFmpegJob (threading.Thread):
                 for arg in FFmpegJob.ffmpegargs:
                     if 'parm' in arg:
                         if arg['parm'] in args and args[arg['parm']]:
-                            format = arg['arg'].translate(maketrans("\n\t\r", "\x20"*3))
-                            finalargs.append(format.format(**args))
+                            format_ = arg['arg'].translate(''.maketrans("\n\t\r", "\x20"*3))
+                            finalargs.append(format_.format(**args))
                     else:
                         finalargs.append(arg['arg'])
                         

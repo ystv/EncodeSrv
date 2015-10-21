@@ -9,7 +9,6 @@ import os.path
 # Logging
 import logging
 import logging.handlers
-import handler
 
 # Other Encodesrv modules
 from job import FFmpegJob, THREADPOOL
@@ -20,7 +19,7 @@ from config import Config
 
 
 # Logging constants
-LOG_FILENAME= "/home/ystv/encodesrv.log"
+LOG_FILENAME= "encodesrv.log"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
 def main():
@@ -29,7 +28,7 @@ def main():
     Sets up logging and database connection, gets job list
     """
     # Setup a basic logging system to file
-    logging.basicConfig(filename=LOG_FILENAME, level=logging.DEBUG, format=LOG_FORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
 
     # Setup logging to email for critical failures
     mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
@@ -37,16 +36,7 @@ def main():
                             toaddrs=Config["mail"]["to"],
                             subject='Encode Job Failure')
     mailhandler.setLevel(logging.ERROR)
-    logging.getLogger('').addHandler(mailhandler)
-
-    # And lets tell Morrissey for IRC
-    try:
-        morrissey_handler = handler.Morrissey_Handler(**Config['morrissey'])
-        morrissey_handler.setLevel(logging.INFO)
-        logging.getLogger('').addHandler(morrissey_handler)
-        logging.debug('Started Morrissey handler.')
-    except:
-        logging.exception('Failed to load morrissey handler.')
+    ##logging.getLogger('').addHandler(mailhandler)
 
     logging.info("Starting Up")
 
@@ -66,7 +56,7 @@ def main():
 
     # Spawn off 3 threads to handle the jobs.
     logging.info("Spawning Threads")
-    for x in xrange(3):
+    for x in range(3):
         logging.debug("spawning thread {}".format(x))
         FFmpegJob().start()
 
@@ -118,9 +108,9 @@ if __name__ == "__main__":
         elif 'restart' == sys.argv[1]:
             daemon.restart()
         else:
-            print "Unknown command"
+            print("Unknown command")
             sys.exit(2)
         sys.exit(0)
     else:
-        print "usage: %s start|stop|restart" % sys.argv[0]
+        print("usage: {} start|stop|restart".format(sys.argv[0]))
         sys.exit(2)
