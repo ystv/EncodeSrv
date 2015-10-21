@@ -8,8 +8,8 @@ import os.path
 
 # Logging
 import logging.handlers
-import slack
-import encodeirc
+import bots.slack
+import bots.irc
 
 # Other Encodesrv modules
 from job import FFmpegJob, THREADPOOL
@@ -40,12 +40,12 @@ def main():
     ##logging.getLogger('').addHandler(mailhandler)
     
     if Config['slack']['enabled']:
-        slackhandler = slack.Encode_slack(**Config['slack'])
+        slackhandler = bots.slack.Encode_slack(**Config['slack'])
         slackhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(slackhandler)
 
     if Config['irc']['enabled']:
-        irchandler = encodeirc.Encode_irc(**Config['irc'])
+        irchandler = bots.irc.Encode_irc(**Config['irc'])
         
         while not irchandler.is_joined():
             pass

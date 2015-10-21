@@ -5,7 +5,7 @@ import threading
 
 logging.getLogger('irc').setLevel(logging.CRITICAL)
 
-class Encode_irc_bot(irc.bot.SingleServerIRCBot):
+class IRC_bot(irc.bot.SingleServerIRCBot):
     
     def __init__(self, channel, nickname, server, port=6667):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
@@ -13,7 +13,7 @@ class Encode_irc_bot(irc.bot.SingleServerIRCBot):
         self.joined = False
         
     def _on_join(self, c, e):
-        super(Encode_irc_bot, self)._on_join(c, e)
+        super(IRC_bot, self)._on_join(c, e)
         self.joined = True
 
     def on_nicknameinuse(self, c, e):
@@ -23,7 +23,7 @@ class Encode_irc_bot(irc.bot.SingleServerIRCBot):
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
-        self.do_command(e, e.arguments[0])
+        self.do_command(e, e.arguments[0], True)
 
     def on_pubmsg(self, c, e):
         a = e.arguments[0].split(":", 1)
@@ -31,25 +31,36 @@ class Encode_irc_bot(irc.bot.SingleServerIRCBot):
             self.do_command(e, a[1].strip())
         return
 
-    def do_command(self, e, cmd):
+    def do_command(self, e, cmd, private = False):
         nick = e.source.nick
-        c = self.connection
 
-        pass
+        if cmd == "status":
+            msg = "Currently encoding <things>, with <some> items waiting."
+        else:
+            msg = "Unknown command."
+            
+        if private:
+            args = {"msg": msg, "channel": nick}
+        else:
+            args = {"msg": nick + ": " + msg}
+        
+        self.send_msg(**args)
             
     def is_joined(self):
         
         return self.joined
     
-    def send_msg(self, msg):
+    def send_msg(self, msg = "", channel = None):
         
-        self.connection.privmsg(self.channel, msg)
+        if channel is None:
+            channel = self.channel
+        self.connection.privmsg(channel, msg)
 
-class Encode_irc_thread(threading.Thread):
+class Bot_thread(threading.Thread):
     
     def __init__(self, bot):
         
-        super(Encode_irc_thread, self).__init__()
+        super(Bot_thread, self).__init__()
         self.bot = bot
         
     def run(self):
@@ -61,8 +72,8 @@ class Encode_irc(logging.Handler):
     def __init__(self, server = None, port = 6667, channel = None, nick = None, **kwargs):
         
         super(Encode_irc, self).__init__()
-        self.bot = Encode_irc_bot(channel, nick, server, port)
-        self.thread = Encode_irc_thread(self.bot)
+        self.bot = IRC_bot(channel, nick, server, port)
+        self.thread = Bot_thread(self.bot)
         self.thread.start()
     
     def is_joined(self):
