@@ -56,8 +56,8 @@ class FFmpegJob (threading.Thread):
     def _update_status(self, status, id_):
         """Wrapper to change the DB status of a job """
         try:
-            logging.debug('Job {}: '.format(id) + status)
-            self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status,id_))
+            logging.debug('Job {}: '.format(id_) + status)
+            self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status, id_))
             self.dbconn.commit()
         except:
             logging.exception("Job {}: Failed to update status in DB".format(id_))
@@ -71,7 +71,7 @@ class FFmpegJob (threading.Thread):
 
 
         while p.poll() != 0:
-            line = p.stdout.readline()
+            line = p.stdout.readline().decode("utf-8")
             if line.strip() == '':
                 continue
             if not line.rstrip().isdigit():
@@ -122,7 +122,7 @@ class FFmpegJob (threading.Thread):
             dirname = os.path.join(Config['tmpfolder'], "{}--encode--{}".format(
                 os.path.basename(self.jobreq['source_file']), str(datetime.now()).replace(' ', '-')
             ))
-            os.mkdir(dirname, 775)
+            os.mkdir(dirname, 0o775)
         except:
             logging.exception("Job {} - Failed to create temporary directory".format(self.jobreq['id']))
             self._update_status("Error", self.jobreq['id'])
@@ -182,7 +182,7 @@ class FFmpegJob (threading.Thread):
                 level = float(args['normalise_level'])
                 analysis = subprocess.check_output(["ffmpeg", "-i", srcpath, "-af",
                     "ebur128", "-f", "null", "-y", "/dev/null"], stderr=subprocess.STDOUT)
-                maxvolume = re.search(r"Integrated loudness:$\s* I:\s*(-?\d*.\d*) LUFS", analysis,
+                maxvolume = re.search(r"Integrated loudness:$\s* I:\s*(-?\d*.\d*) LUFS", analysis.decode("utf-8"),
                     flags=re.MULTILINE).group(1)
 
                 # Calculate normalisation factor

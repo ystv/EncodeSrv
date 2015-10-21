@@ -7,8 +7,8 @@ import sys
 import os.path
 
 # Logging
-import logging
 import logging.handlers
+import slack
 
 # Other Encodesrv modules
 from job import FFmpegJob, THREADPOOL
@@ -37,6 +37,13 @@ def main():
                             subject='Encode Job Failure')
     mailhandler.setLevel(logging.ERROR)
     ##logging.getLogger('').addHandler(mailhandler)
+    
+    if Config['slack']['enabled']:
+        slackhandler = slack.Encode_slack(**Config['slack'])
+        slackhandler.setLevel(logging.INFO)
+        logging.getLogger().addHandler(slackhandler)
+
+
 
     logging.info("Starting Up")
 
@@ -52,7 +59,6 @@ def main():
     except:
         logging.exception("Failed to connect to database on start, oops")
         raise
-
 
     # Spawn off 3 threads to handle the jobs.
     logging.info("Spawning Threads")
