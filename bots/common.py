@@ -4,11 +4,35 @@ Author: Robert Walker <robert.walker@ystv.co.uk> 2015
 """
 
 import re
+import psycopg2
+import enum
+from config import Config
 
 privmsg_re = re.compile(r"^<?@?([^ |^>]*)>?: *(.*)")
 """Regex to pull the user and message from slack/IRC strings."""
 
-def form_status_msg():
+class Message_enum(enum.Enum):
+    
+    status = 1
+    unknown_cmd = 2
+
+message_dict = {
+                Message_enum.status: "Currently encoding {}, with {} item{} waiting.",
+                Message_enum.unknown_cmd: "I don't know what you're asking."
+                }
+
+def form_msg(enum_value, encodesrv_daemon):
+    
+    if enum_value == Message_enum.status:
+        return form_status_msg(encodesrv_daemon)
+    elif enum_value == Message_enum.unknown_cmd:
+        return form_help_msg()
+    
+def form_help_msg():
+    
+    return message_dict[Message_enum.unknown_cmd]
+
+def form_status_msg(encodesrv_daemon):
     
     """Form a nice, human readable message for the status of the server.
     
@@ -19,4 +43,18 @@ def form_status_msg():
         Status message (string).
     """
     
-    return "Currently encoding <things>, with <some> items waiting."
+    encoding = encodesrv_daemon.get_current_jobs()
+    
+    if encoding == []:
+        encoding = 'no jobs'
+    else:
+        encoding = ', '.join(encoding).rstrip(', ')
+        
+    dbconn = psycopg2.connect(**Config["database"])
+    cur = dbconn.cursor()
+    cur.execute("SELECT COUNT(*) FROM encode_jobs WHERE status ='Not Encoding' or status = 'Waiting'")
+    waiting = cur.fetchone()[0]
+    cur.close()
+    dbconn.close()
+    
+    return message_dict[Message_enum.status].format(encoding, waiting, "" if int(waiting) == 1 else "s" )

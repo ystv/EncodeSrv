@@ -6,7 +6,7 @@ import time
 import sys
 import os.path
 
-# logger
+# self.logger
 import log
 
 # Other Encodesrv modules
@@ -25,7 +25,14 @@ class EncodeSrvDaemon(Daemon):
         run: Thing that does the actual running.
     """
     
-    
+    def get_current_jobs(self):
+        
+        encoding = []
+        for thread in self.thread_list:
+            if thread.get_job_name() is not None:
+                encoding.append(thread.get_job_name())
+        
+        return encoding
     
     def run(self):
         
@@ -39,13 +46,13 @@ class EncodeSrvDaemon(Daemon):
         """
         
         # Set up logging
-        logger = log.setup_logging()
+        self.logger = log.setup_logging(self)
         
-        logger.info("Starting Up")
+        self.logger.info("Starting Up")
     
         # Reset all crashed jobs
         try:
-            logger.debug('Restarting crashed jobs')
+            self.logger.debug('Restarting crashed jobs')
             dbconn = psycopg2.connect(**Config["database"])
             cur = dbconn.cursor()
             cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status !='Done' AND status != 'Error'")
@@ -53,14 +60,16 @@ class EncodeSrvDaemon(Daemon):
             cur.close()
             dbconn.close()
         except:
-            logger.exception("Failed to connect to database on start, oops")
+            self.logger.exception("Failed to connect to database on start, oops")
             raise
     
-        # Spawn off 3 threads to handle the jobs.
-        logger.info("Spawning Threads")
-        for x in range(3):
-            logger.debug("spawning thread {}".format(x))
-            FFmpegJob().start()
+        self.thread_list = []
+        # Spawn off threads to handle the jobs.
+        self.logger.info("Spawning Threads")
+        for x in range(Config['threads']):
+            self.logger.debug("spawning thread {}".format(x))
+            self.thread_list.append(FFmpegJob().start())
+            
     
         columns = ["id", "source_file", "destination_file", "format_id", "status", "video_id"]
     
@@ -87,11 +96,11 @@ class EncodeSrvDaemon(Daemon):
                 cur.close()
                 conn.close()
             except:
-                logger.exception("ERROR: An unhandled exception occured in the server whilst getting jobs.")
+                self.logger.exception("ERROR: An unhandled exception occured in the server whilst getting jobs.")
                 raise
             time.sleep(60) #sleep after a run
             while THREADPOOL.qsize() > 6:
-                logger.debug("Going to sleep for a while")
+                self.logger.debug("Going to sleep for a while")
                 time.sleep(60) #if the queue is still full, sleep a bit longer
         return
 

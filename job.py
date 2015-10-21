@@ -62,13 +62,9 @@ class FFmpegJob (threading.Thread):
         except:
             logging.exception("Job {}: Failed to update status in DB".format(id_))
 
-    def intify(self, T):
-        return tuple([int(e) for e in T])
-
     def _copyfile(self, src, dst, desc):
         logging.debug('Job {}: (pv -ni 5 "{}" > "{}") 2>&1'.format(self.jobreq['id'], src, dst))
         p = subprocess.Popen('(pv -ni 5 "{}" > "{}") 2>&1'.format(src, dst), stdout=subprocess.PIPE, shell=True)
-
 
         while p.poll() != 0:
             line = p.stdout.readline().decode("utf-8")
@@ -85,6 +81,24 @@ class FFmpegJob (threading.Thread):
         self.dbcur.execute("SELECT format_name FROM encode_formats WHERE id = {}".format(self.jobreq['format_id']) )
         fetched = [x if x is not None else '' for x in self.dbcur.fetchone()]
         return os.path.basename(self.jobreq['source_file']) + ' (' + fetched[0] + ')'
+    
+    def get_job_name(self):
+        
+        """Get a nice name for current job.
+        
+        Arguments:
+            None.
+        
+        Returns:
+            Job name (string) or None.
+        """
+        
+        try: 
+            if self.dbcur:
+                pass
+        except AttributeError:
+            return None
+        return self._nice_name()
 
     def run(self):
         while True:
@@ -316,3 +330,7 @@ class FFmpegJob (threading.Thread):
         
         del self.dbcur
         del self.dbconn
+        
+    def start(self):
+        super(FFmpegJob, self).start()
+        return self

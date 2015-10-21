@@ -8,14 +8,17 @@ import irc.strings
 import logging
 import threading
 
+from . import common
+
 # Turn off the irc module logging.
 logging.getLogger('irc').setLevel(logging.CRITICAL)
+logger = logging.getLogger(__name__)
 
 class IRC_bot(irc.bot.SingleServerIRCBot):
     
     """Class that does the main talking to IRC."""
     
-    def __init__(self, channel, nickname, server, port=6667):
+    def __init__(self, parent, channel, nickname, server, port=6667):
         
         """Create the bot.
         
@@ -31,6 +34,7 @@ class IRC_bot(irc.bot.SingleServerIRCBot):
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
         self.channel = channel
         self.joined = False
+        self.parent = parent
         
     def _on_join(self, c, e):
         
@@ -78,11 +82,15 @@ class IRC_bot(irc.bot.SingleServerIRCBot):
         """
         
         nick = e.source.nick
+        
+        daemon = self.parent.parent
+        enum = common.Message_enum
+        form_msg = common.form_msg
 
         if cmd == "status":
-            msg = "Currently encoding <things>, with <some> items waiting."
+            msg = form_msg(enum.status, daemon)
         else:
-            msg = "Unknown command."
+            msg = form_msg(enum.unknown_cmd, daemon)
             
         if private:
             args = {"msg": msg, "channel": nick}
@@ -118,10 +126,11 @@ class Bot_thread(threading.Thread):
 
 class Encode_irc(logging.Handler):
     
-    def __init__(self, server = None, port = 6667, channel = None, nick = None, **kwargs):
+    def __init__(self, parent, server = None, port = 6667, channel = None, nick = None, **kwargs):
         
         super(Encode_irc, self).__init__()
-        self.bot = IRC_bot(channel, nick, server, port)
+        self.parent = parent
+        self.bot = IRC_bot(self, channel, nick, server, port)
         self.thread = Bot_thread(self.bot)
         self.thread.start()
     

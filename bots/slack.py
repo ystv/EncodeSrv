@@ -10,13 +10,13 @@ logger = logging.getLogger(__name__)
 
 class Slack_rtm_thread(threading.Thread):
     
-    def __init__(self, api_key, send_queue):
+    def __init__(self, parent, api_key, send_queue):
         
         super(Slack_rtm_thread, self).__init__(daemon = True)
         self.api_key = api_key
         self.send_queue = send_queue
         self.channel = None
-        
+        self.parent = parent
         
     def get_channel(self):
         
@@ -54,8 +54,16 @@ class Slack_rtm_thread(threading.Thread):
             return
         user, cmd = matches[0]
         if user == self.slackclient.server.username or user == self.id:
+            daemon = self.parent.parent
+            enum = common.Message_enum
+            form_msg = common.form_msg
+    
             if cmd == "status":
-                self.send_queue.put("Currently encoding <things>, with <some> items waiting.")
+                msg = form_msg(enum.status, daemon)
+            else:
+                msg = form_msg(enum.unknown_cmd, daemon)
+            
+            self.send_queue.put(msg)
         
     def __str__(self):
         
@@ -64,11 +72,12 @@ class Slack_rtm_thread(threading.Thread):
 
 class Encode_slack(logging.Handler):
     
-    def __init__(self, api_key = None, channel = None, **kwargs):
+    def __init__(self, parent, api_key = None, channel = None, **kwargs):
         super(Encode_slack, self).__init__()
         self.send_queue = queue.Queue()
-        self.rtm_thread = Slack_rtm_thread(api_key, self.send_queue)
+        self.rtm_thread = Slack_rtm_thread(self, api_key, self.send_queue)
         self.rtm_thread.start()
+        self.parent = parent
         if channel is not None:
             self.set_channel(channel)
     

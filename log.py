@@ -9,10 +9,10 @@ import bots.irc
 
 from config import Config
 
-LOG_FILENAME= "encodesrv.log"
+LOG_FILENAME= "/tmp/encodesrv.log"
 LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
 
-def setup_logging():
+def setup_logging(encodesrv_daemon):
     
     """Make all the log handlers set the log formats.
     
@@ -23,7 +23,7 @@ def setup_logging():
         '__main__' logger.
     """
     
-    logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT)
+    logging.basicConfig(filename = LOG_FILENAME, level = logging.DEBUG, format = LOG_FORMAT)
 
     # Setup logging to email for critical failures
     mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
@@ -35,13 +35,13 @@ def setup_logging():
     
     # Slack bot logging
     if Config['slack']['enabled']:
-        slackhandler = bots.slack.Encode_slack(**Config['slack'])
+        slackhandler = bots.slack.Encode_slack(encodesrv_daemon, **Config['slack'])
         slackhandler.setLevel(logging.INFO)
         logging.getLogger().addHandler(slackhandler)
 
     # IRC bot logging
     if Config['irc']['enabled']:
-        irchandler = bots.irc.Encode_irc(**Config['irc'])
+        irchandler = bots.irc.Encode_irc(encodesrv_daemon, **Config['irc'])
         
         while not irchandler.is_joined():
             pass
