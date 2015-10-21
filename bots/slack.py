@@ -3,6 +3,8 @@ import queue
 import slackclient
 import threading
 
+from . import common
+
 logger = logging.getLogger(__name__)
 
 class Slack_rtm_thread(threading.Thread):
@@ -13,6 +15,7 @@ class Slack_rtm_thread(threading.Thread):
         self.api_key = api_key
         self.send_queue = send_queue
         self.channel = None
+        
         
     def get_channel(self):
         
@@ -25,6 +28,7 @@ class Slack_rtm_thread(threading.Thread):
     def run(self):
         self.slackclient = slackclient.SlackClient(self.api_key)
         if self.slackclient.rtm_connect():
+            self.id = self.slackclient.server.users.find(self.slackclient.server.username)
             while True:
                 try:
                     msg = self.send_queue.get(block = False)
@@ -34,11 +38,21 @@ class Slack_rtm_thread(threading.Thread):
                     if responses == []:
                         continue
                     for msg in responses:
-                        self._slack_respond(msg)
+                        try:
+                            if msg['type'] == 'message':
+                                self._slack_respond(msg)
+                        except KeyError:
+                            continue
     
     def _slack_respond(self, msg):
         
-        pass 
+        matches = common.privmsg_re.findall(msg['text'])
+        if len(matches) != 1:
+            return
+        user, cmd = matches[0]
+        if user == self.slackclient.server.username or user == self.id:
+            if cmd == "status":
+                self.send_queue.put("Currently encoding <things>, with <some> items waiting.")
         
     def __str__(self):
         
