@@ -1,3 +1,8 @@
+"""Slack bot handler for encodesrv.
+
+Author: Robert Walker <robert.walker@ystv.co.uk> 2015
+"""
+
 import logging
 import queue
 import slackclient
@@ -5,6 +10,7 @@ import threading
 import time
 
 from . import common
+from ..messages import Message_enum
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +61,7 @@ class Slack_rtm_thread(threading.Thread):
         user, cmd = matches[0]
         if user == self.slackclient.server.username or user == self.id:
             daemon = self.parent.parent
-            enum = common.Message_enum
+            enum = Message_enum
             form_msg = common.form_msg
     
             if cmd == "status":

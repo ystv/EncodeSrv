@@ -10,6 +10,7 @@ import time
 import threading
 
 from . import common
+from ..messages import Message_enum
 
 # Turn off the irc module log.
 logging.getLogger('irc').setLevel(logging.CRITICAL)
@@ -85,7 +86,7 @@ class IRC_bot(irc.bot.SingleServerIRCBot):
         nick = e.source.nick
         
         daemon = self.parent.parent
-        enum = common.Message_enum
+        enum = Message_enum
         form_msg = common.form_msg
 
         if cmd == "status":

@@ -11,6 +11,7 @@ import re
 from datetime import datetime
 from .config import Config
 from . import logs
+from . import Message_enum
 
 THREADPOOL = queue.Queue(0)
 
@@ -123,7 +124,9 @@ class FFmpegJob (threading.Thread):
             logger.exception("Job {}: Could not connect to database".format(self.jobreq['id']))
             return
         
-        logger.info('starting job {}, {}'.format(self.jobreq['id'], self._nice_name()))
+        logger.info(Message_enum.start_job, data = {"id_": self.jobreq['id'], 
+                                                    "name": self._nice_name()
+                                                    })
 
         # Check whether source file exists
         try:
@@ -327,7 +330,9 @@ class FFmpegJob (threading.Thread):
             self._update_status("Encoded", self.jobreq['id'])
             logger.exception("Job {}: Failed to remove directory: {}".format(self.jobreq['id'],os.path.dirname(args['_TempDest'])));
 
-        logger.info("Job {}: ({}) done!".format(self.jobreq['id'], self._nice_name()))
+        logger.info(Message_enum.finish_job, data = {"id_": self.jobreq['id'], 
+                                                    "name": self._nice_name()
+                                                    })
         
         del self.dbcur
         del self.dbconn

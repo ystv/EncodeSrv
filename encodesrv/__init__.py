@@ -11,6 +11,7 @@ import os.path
 import logging
 from encodesrv import logs
 from encodesrv.logs import log
+from encodesrv.logs.messages import Message_enum
 
 # Other Encodesrv modules
 from encodesrv.job import FFmpegJob, THREADPOOL
@@ -65,7 +66,7 @@ class EncodeSrv():
         log.setup_logging(self)
         self.logger = logs.get_logger(__name__)
         
-        self.logger.info("Starting Up")
+        self.logger.info(Message_enum.start_server)
     
         # Reset all crashed jobs
         try:
@@ -82,7 +83,7 @@ class EncodeSrv():
     
         self.thread_list = []
         # Spawn off threads to handle the jobs.
-        self.logger.info("Spawning Threads")
+        self.logger.info("Spawning Threads", bot = False)
         for x in range(Config['threads']):
             self.logger.debug("spawning thread {}".format(x))
             self.thread_list.append(FFmpegJob().start())
