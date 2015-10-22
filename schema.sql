@@ -12,11 +12,22 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: encode_formats_id_seq1; Type: SEQUENCE; Schema: public
+--
+
+CREATE SEQUENCE encode_formats_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+--
 -- Name: encode_formats; Type: TABLE; Schema: public; Tablespace: 
 --
 
 CREATE TABLE encode_formats (
-    id integer NOT NULL,
+    id integer DEFAULT nextval('encode_formats_id_seq'::regclass) NOT NULL,
     format_name text NOT NULL,
     container text NOT NULL,
     video_bitrate integer NOT NULL,
@@ -179,18 +190,6 @@ COMMENT ON COLUMN encode_formats.ef_priority IS 'Default priority for this forma
 
 COMMENT ON COLUMN encode_formats.pass IS 'Whether the format is 1 or 2 pass';
 
-
---
--- Name: encode_formats_id_seq1; Type: SEQUENCE; Schema: public
---
-
-CREATE SEQUENCE encode_formats_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
 --
 -- Name: encode_formats_id_seq; Type: SEQUENCE OWNED BY; Schema: public
 --
@@ -315,11 +314,19 @@ COMMENT ON COLUMN encode_jobs.priority IS 'Mainly for batch encode jobs like re-
 ALTER TABLE ONLY encode_jobs
     ADD CONSTRAINT encode_jobs_pkey PRIMARY KEY (id);
 
-COMMIT;
-
 --
 -- Name: encode_jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public
 --
 
 ALTER SEQUENCE encode_jobs_id_seq OWNED BY encode_jobs.id;
 
+--
+-- Name: encode_jobs_format_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: robert
+--
+
+ALTER TABLE ONLY encode_jobs
+    ADD CONSTRAINT encode_jobs_format_id_fkey FOREIGN KEY (format_id) REFERENCES encode_formats(id) ON UPDATE CASCADE;
+
+
+
+COMMIT;
