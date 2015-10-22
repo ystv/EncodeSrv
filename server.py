@@ -7,14 +7,14 @@ import sys
 import os.path
 
 # self.logger
-import log
+from encodesrv import log
 
 # Other Encodesrv modules
-from job import FFmpegJob, THREADPOOL
-from daemon import Daemon
+from encodesrv.job import FFmpegJob, THREADPOOL
+from encodesrv.daemon import Daemon
 
 # And config stuff
-from config import Config
+from encodesrv.config import Config
     
 
 class EncodeSrvDaemon(Daemon):
@@ -22,10 +22,20 @@ class EncodeSrvDaemon(Daemon):
     """Actual encodesrv daemon. Jobs and things launched from here
     
     Methods:
+        get_current_jobs: Return the names for all the jobs running.
         run: Thing that does the actual running.
     """
     
     def get_current_jobs(self):
+        
+        """Get a list of nice names for all the jobs currently running.
+        
+        Arguments:
+            None.
+            
+        Returns:
+            Running jobs (list of strings).
+        """
         
         encoding = []
         for thread in self.thread_list:

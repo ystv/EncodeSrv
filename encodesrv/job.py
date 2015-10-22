@@ -10,7 +10,7 @@ import time
 import subprocess
 import re
 from datetime import datetime
-from config import Config
+from .config import Config
 
 THREADPOOL = queue.Queue(0)
 

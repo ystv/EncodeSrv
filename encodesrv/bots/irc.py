@@ -10,7 +10,7 @@ import threading
 
 from . import common
 
-# Turn off the irc module logging.
+# Turn off the irc module log.
 logging.getLogger('irc').setLevel(logging.CRITICAL)
 logger = logging.getLogger(__name__)
 
