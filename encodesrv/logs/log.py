@@ -29,12 +29,13 @@ def setup_logging(encodesrv):
     logging.getLogger().addHandler(streamhandler)
 
     # Setup logging to email for critical failures
-    mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
-                            fromaddr=Config["mail"]["from"],
-                            toaddrs=Config["mail"]["to"],
-                            subject='Encode Job Failure')
-    mailhandler.setLevel(logging.ERROR)
-    ##logging.getLogger('').addHandler(mailhandler)
+    if Config['mail']['enabled']:
+        mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
+                                fromaddr=Config["mail"]["from"],
+                                toaddrs=Config["mail"]["to"],
+                                subject='Encode Job Failure')
+        mailhandler.setLevel(logging.ERROR)
+        logging.getLogger('').addHandler(mailhandler)
     
     # Slack bot logging
     if Config['slack']['enabled']:
