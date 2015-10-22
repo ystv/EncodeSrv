@@ -6,7 +6,7 @@ Author: Robert Walker <robert.walker@ystv.co.uk> 2015
 import re
 import psycopg2
 import enum
-from ..config import Config
+from ...config import Config
 
 privmsg_re = re.compile(r"^<?@?([^ |^>]*)>?: *(.*)")
 """Regex to pull the user and message from Slack/IRC strings."""

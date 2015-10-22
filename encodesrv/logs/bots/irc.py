@@ -6,6 +6,7 @@ Author: Robert Walker <robert.walker@ystv.co.uk> 2015
 import irc.bot
 import irc.strings
 import logging
+import time
 import threading
 
 from . import common
@@ -133,6 +134,8 @@ class Encode_irc(logging.Handler):
         self.bot = IRC_bot(self, channel, nick, server, port)
         self.thread = Bot_thread(self.bot)
         self.thread.start()
+        while not self.bot.is_joined():
+            time.sleep(0.1)
     
     def is_joined(self):
         

@@ -89,13 +89,13 @@ class Encode_slack(logging.Handler):
         
         self.rtm_thread.set_channel(channel)
         
-    def send_message(self, msg):
+    def send_msg(self, msg):
         
         self.send_queue.put(msg)
         
     def emit(self, record):
 
-        self.send_message(record.getMessage())
+        self.send_msg(record.getMessage())
         
 if __name__ == '__main__':
 

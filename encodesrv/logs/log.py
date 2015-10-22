@@ -4,15 +4,14 @@ Author: Robert Walker <robert.walker@ystv.co.uk> 2015
 """
 
 import logging.handlers
-from .bots import slack
-from .bots import irc
+from . import bots
 
-from .config import Config
+from ..config import Config
 
 LOG_FILENAME= "/tmp/encodesrv.log"
-LOG_FORMAT = '%(asctime)s:%(levelname)s:%(message)s'
+LOG_FORMAT = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
 
-def setup_logging(encodesrv_daemon):
+def setup_logging(encodesrv):
     
     """Make all the log handlers set the log formats.
     
@@ -24,6 +23,10 @@ def setup_logging(encodesrv_daemon):
     """
     
     logging.basicConfig(filename = LOG_FILENAME, level = logging.DEBUG, format = LOG_FORMAT)
+    
+    streamhandler = logging.StreamHandler()
+    streamhandler.setFormatter(logging.Formatter(LOG_FORMAT))
+    logging.getLogger().addHandler(streamhandler)
 
     # Setup logging to email for critical failures
     mailhandler = logging.handlers.SMTPHandler(mailhost=Config["mail"]["host"],
@@ -35,17 +38,10 @@ def setup_logging(encodesrv_daemon):
     
     # Slack bot logging
     if Config['slack']['enabled']:
-        slackhandler = slack.Encode_slack(encodesrv_daemon, **Config['slack'])
-        slackhandler.setLevel(logging.INFO)
-        logging.getLogger().addHandler(slackhandler)
+        bots.get_bot('slack', encodesrv, **Config['slack'])
 
     # IRC bot logging
     if Config['irc']['enabled']:
-        irchandler = irc.Encode_irc(encodesrv_daemon, **Config['irc'])
-        
-        while not irchandler.is_joined():
-            pass
-        irchandler.setLevel(logging.INFO)
-        logging.getLogger().addHandler(irchandler)
+        bots.get_bot('irc', encodesrv, **Config['irc'])
 
     return logging.getLogger('__main__')
