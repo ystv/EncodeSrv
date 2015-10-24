@@ -23,6 +23,11 @@ class Slack_rtm_thread(threading.Thread):
         self.send_queue = send_queue
         self.channel = None
         self.parent = parent
+        self.connected = False
+        
+    def get_connected(self):
+        
+        return self.connected
         
     def get_channel(self):
         
@@ -34,7 +39,9 @@ class Slack_rtm_thread(threading.Thread):
         
     def run(self):
         self.slackclient = slackclient.SlackClient(self.api_key)
-        if self.slackclient.rtm_connect():
+        connect = self.slackclient.rtm_connect()
+        if connect:
+            self.connected = True
             self.id = self.slackclient.server.users.find(self.slackclient.server.username)
             while True:
                 try:
@@ -52,6 +59,8 @@ class Slack_rtm_thread(threading.Thread):
                             continue
                 finally:
                     time.sleep(0.1)
+        else:
+            raise Exception("Could not connect to Slack.")
     
     def _slack_respond(self, msg):
         
@@ -76,16 +85,20 @@ class Slack_rtm_thread(threading.Thread):
         return str(self.slackclient)
         
 
-class Encode_slack(logging.Handler):
+class Encode_slack():
     
     def __init__(self, parent, api_key = None, channel = None, **kwargs):
-        super(Encode_slack, self).__init__()
+        
+        assert type(api_key) == str
         self.send_queue = queue.Queue()
         self.rtm_thread = Slack_rtm_thread(self, api_key, self.send_queue)
         self.rtm_thread.start()
         self.parent = parent
         if channel is not None:
             self.set_channel(channel)
+        while not self.rtm_thread.get_connected():
+            time.sleep(0.1)
+        logger.info("Connected to Slack.")
     
     def get_channel(self):
         
@@ -101,16 +114,4 @@ class Encode_slack(logging.Handler):
         
     def emit(self, record):
 
-        self.send_msg(record.getMessage())
-        
-if __name__ == '__main__':
-
-    from time import sleep
-    
-    send_queue = queue.Queue()
-    
-    slackbot = Encode_slack("xoxb-12939465410-BNhRXRA5sqz67bd4w03eVoqV")
-    slackbot.set_channel("firing_range")
-    while True:
-        sleep(10)
-    
+        self.send_msg(record.getMessage())    

@@ -144,6 +144,7 @@ class Encode_irc(logging.Handler):
         self.thread.start()
         while not self.bot.is_joined():
             time.sleep(0.1)
+        logger.info("Connected to IRC.")
     
     def is_joined(self):
         
