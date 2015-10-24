@@ -139,7 +139,7 @@ class Encode_irc(logging.Handler):
         
         super(Encode_irc, self).__init__()
         self.parent = parent
-        self.bot = IRC_bot(**kwargs)
+        self.bot = IRC_bot(self, **kwargs)
         self.thread = Bot_thread(self.bot)
         self.thread.start()
         while not self.bot.is_joined():
