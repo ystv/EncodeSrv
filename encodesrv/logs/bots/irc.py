@@ -20,23 +20,29 @@ class IRC_bot(irc.bot.SingleServerIRCBot):
     
     """Class that does the main talking to IRC."""
     
-    def __init__(self, parent, channel, nickname, server, port=6667):
+    def __init__(self, parent = None, channel = "", nick = "", server = "", ident_pass = "", port=6667, **kwargs):
         
         """Create the bot.
         
         Arguments:
             channel (string): Channel for the bot to live in.
-            nickname (string): Bot's nick.
+            nick (string): Bot's nick.
             server (string): IRC server to connect to.
             port (int): Port to connect to the server on.
+            ident_pass (string): Password to identify to chanserv with. 
             
         Returns:
             IRC_bot instance.
         """
-        irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
+        
+        assert type(channel) == str
+        assert type(ident_pass) == str
+        assert type(nick) == str
+        irc.bot.SingleServerIRCBot.__init__(self, [(server, port)], nick, nick)
         self.channel = channel
         self.joined = False
         self.parent = parent
+        self.ident_pass = ident_pass 
         
     def _on_join(self, c, e):
         
@@ -44,6 +50,7 @@ class IRC_bot(irc.bot.SingleServerIRCBot):
         
         super(IRC_bot, self)._on_join(c, e)
         self.joined = True
+        self.send_msg("identify " + self.ident_pass, "nickserv")
 
     def on_nicknameinuse(self, c, e):
         
@@ -128,11 +135,11 @@ class Bot_thread(threading.Thread):
 
 class Encode_irc(logging.Handler):
     
-    def __init__(self, parent, server = None, port = 6667, channel = None, nick = None, **kwargs):
+    def __init__(self, parent, **kwargs):
         
         super(Encode_irc, self).__init__()
         self.parent = parent
-        self.bot = IRC_bot(self, channel, nick, server, port)
+        self.bot = IRC_bot(**kwargs)
         self.thread = Bot_thread(self.bot)
         self.thread.start()
         while not self.bot.is_joined():
