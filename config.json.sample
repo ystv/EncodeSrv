@@ -11,7 +11,7 @@ Config = {
 		"host"	: "mail.example.com",
 		"from"	: "encodesrv@example.com",
 		"to"	: "computing@example.com",
-		"enabled": False
+		"enabled": false
 	},
 	"tmpfolder": "/tmp/tempencoding",
 	"mntfolder": "/",
@@ -19,13 +19,14 @@ Config = {
 	"irc": {
 		"server"	: "example.com",
 		"port"	: 6667,
-		"enabled": True,
+		"enabled": true,
 		"channel": "#example",
-		"nick": "example-bot"
+		"nick": "example-bot",
+		"ident_pass": "pass"
 	},
 	"slack": {
 		"api_key": "aaaa-111111111111111",
 		"channel": "example",
-		"enabled": True
+		"enabled": true
 	}
 }
