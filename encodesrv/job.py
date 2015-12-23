@@ -12,7 +12,7 @@ from datetime import datetime
 from .config import Config
 from . import logs
 from . import Message_enum
-from string import maketrans
+
 THREADPOOL = queue.Queue(0)
 
 logger = logs.get_logger(__name__)
@@ -236,7 +236,7 @@ class FFmpegJob (threading.Thread):
                 for arg in FFmpegJob.ffmpegargs:
                     if 'parm' in arg:
                         if arg['parm'] in args and args[arg['parm']]:
-                            format_ = arg['arg'].translate(maketrans("\n\t\r", "\x20"*3))
+                            format_ = arg['arg'].translate(''.maketrans("\n\t\r", "\x20"*3))
                             finalargs.append(format_.format(**args))
                     else:
                         finalargs.append(arg['arg'])
