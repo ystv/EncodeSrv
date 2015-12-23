@@ -4,7 +4,7 @@ Author: Robert Walker <robert.walker@ystv.co.uk> 2015
 """
 
 import logging
-import queue
+import Queue as queue
 import slackclient
 import threading
 import time
