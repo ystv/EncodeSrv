@@ -1,4 +1,4 @@
-from . import irc
+from encodesrv.logs.bots import irc_
 from . import slack
 
 
@@ -7,8 +7,8 @@ _bots = []
 
 def get_bot(bot, *args, **kwargs):
     
-    if bot == 'irc':
-        return_bot = irc.Encode_irc(*args, **kwargs)
+    if bot == 'irc_':
+        return_bot = irc_.Encode_irc(*args, **kwargs)
     elif bot == 'slack':
         return_bot = slack.Encode_slack(*args, **kwargs)
         
