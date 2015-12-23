@@ -18,7 +18,8 @@ class Slack_rtm_thread(threading.Thread):
     
     def __init__(self, parent, api_key, send_queue):
         
-        super(Slack_rtm_thread, self).__init__(daemon = True)
+        threading.Thread.__init__(self)
+        self.daemon = True
         self.api_key = api_key
         self.send_queue = send_queue
         self.channel = None
@@ -89,7 +90,7 @@ class Encode_slack():
     
     def __init__(self, parent, api_key = None, channel = None, **kwargs):
         
-        assert type(api_key) == str
+        assert type(api_key) == str or type(api_key) == unicode
         self.send_queue = queue.Queue()
         self.rtm_thread = Slack_rtm_thread(self, api_key, self.send_queue)
         self.rtm_thread.start()
