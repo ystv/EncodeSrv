@@ -1,7 +1,5 @@
 #EncodeSrv
 
-***This is a backport of the Python3 version, to overcome limitations on YSTV's host***
-
 EncodeSrv is a Python driven automatic video encoding tool, using ffmpeg and a database to configure and run batches of encode jobs. It is used by YSTV to prepare videos for the website by transcoding high-bitrate NLE-exported files to formats for viewing online, playout and download (with watermarks on downloads). In addition to video and audio transcoding EncodeSrv can also apply MP4Box (http://www.videohelp.com/tools/mp4box) to move metadata to the video start and normalise volume using EBU R128 loudness analysis.
 
 ##Downloading EncodeSrv
@@ -18,13 +16,13 @@ Rename the file config.py.sample to config.py and fill in the database and email
 ##Using EncodeSrv
 EncodeSrv uses a Python daemon class to run in the background as a server, start it with:
 
-    python2 server.py start
+    python3 server.py start
 
 Then set up some encode formats in the encode_formats table and add jobs to the encode_jobs table to make it work some magic!
 
 It can also be run as a foreground process, by running:
 
-    python2 __main__.py
+	python3 __main__.py
 
 ##Database tables
 The file schema.sql contains the SQL statements to generate the two database tables needed, along with some comments explaining what each column does.
