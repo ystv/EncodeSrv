@@ -16,11 +16,18 @@ Rename the file config.py.sample to config.py and fill in the database and email
 ##Using EncodeSrv
 EncodeSrv uses a Python daemon class to run in the background as a server, start it with:
 
-    python server.py start
+    python3 server.py start
 
 Then set up some encode formats in the encode_formats table and add jobs to the encode_jobs table to make it work some magic!
+
+It can also be run as a foreground process, by running:
+
+	python3 __main__.py
 
 ##Database tables
 The file schema.sql contains the SQL statements to generate the two database tables needed, along with some comments explaining what each column does.
 
 For the purposes of the source and destination file locations, we use NFS and CIFS mounts so these appear as local paths but are on a remote server, ie /data/videos/web/playout is actually the video drive on our CasparCG playout server.
+
+##IRC/Slack bots
+Encodesrv also supports the use of IRC and/or Slack bots. These can be configured (and turned on and off) in config.py.
