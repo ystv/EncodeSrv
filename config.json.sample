@@ -1,0 +1,32 @@
+# module config
+
+Config = {
+	"database": {
+		"host"    : "example.com",
+		"database": "dbname",
+		"user"    : "dbuser",
+		"password": "dbpass"
+	},
+	"mail": {
+		"host"	: "mail.example.com",
+		"from"	: "encodesrv@example.com",
+		"to"	: "computing@example.com",
+		"enabled": false
+	},
+	"tmpfolder": "/tmp/tempencoding",
+	"mntfolder": "/",
+	"threads": 1,
+	"irc": {
+		"server"	: "example.com",
+		"port"	: 6667,
+		"enabled": true,
+		"channel": "#example",
+		"nick": "example-bot",
+		"ident_pass": "pass"
+	},
+	"slack": {
+		"api_key": "aaaa-111111111111111",
+		"channel": "example",
+		"enabled": true
+	}
+}
