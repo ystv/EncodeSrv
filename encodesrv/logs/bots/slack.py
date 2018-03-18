@@ -10,6 +10,7 @@ import threading
 import time
 
 from . import common
+from ...config import Config
 from ..messages import Message_enum
 
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ class Slack_rtm_thread(threading.Thread):
             while True:
                 try:
                     msg = self.send_queue.get(block = False)
-                    self.slackclient.rtm_send_message(self.get_channel(), msg)
+                    self.slackclient.rtm_send_message(self.get_channel(), Config["servername"] + "> " + msg)
                 except queue.Empty:
                     responses = self.slackclient.rtm_read()
                     if responses == []:
