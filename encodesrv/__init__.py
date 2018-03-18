@@ -73,7 +73,7 @@ class EncodeSrv():
             self.logger.debug('Restarting crashed jobs')
             dbconn = psycopg2.connect(**Config["database"])
             cur = dbconn.cursor()
-            cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status LIKE '%{}%'".format(Config["servername"]))
+            cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status LIKE '%{}%' AND status NOT LIKE '%Error%'".format(Config["servername"]))
             dbconn.commit()
             cur.close()
             dbconn.close()
