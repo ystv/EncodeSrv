@@ -1,6 +1,4 @@
-# module config
-
-Config = {
+{
 	"database": {
 		"host"    : "example.com",
 		"database": "dbname",
