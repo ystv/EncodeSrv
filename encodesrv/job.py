@@ -133,7 +133,7 @@ class FFmpegJob (threading.Thread):
             with open(self.jobreq['source_file']): pass
         except IOError:
             logger.exception("Job {}: Unable to open source file".format(self.jobreq['id']))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Create temp dir for this job
@@ -144,7 +144,7 @@ class FFmpegJob (threading.Thread):
             os.mkdir(dirname, 0o775)
         except:
             logger.exception("Job {} - Failed to create temporary directory".format(self.jobreq['id']))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         try:
@@ -154,7 +154,7 @@ class FFmpegJob (threading.Thread):
             srcpath = os.path.join(dirname, srcleaf)
         except:
             logger.exception("Job {}: Debug 2 failed".format(self.jobreq['id']));
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
 
@@ -179,7 +179,7 @@ class FFmpegJob (threading.Thread):
             args['_TempDest'] = os.path.join(dirname, os.path.basename(self.jobreq['destination_file']))
         except:
             logger.exception("Job {}: Debug 3 failed".format(self.jobreq['id']));
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Copy to local folder, rename source
@@ -190,7 +190,7 @@ class FFmpegJob (threading.Thread):
             logger.exception("Job {}: couldn't copy from {} to {}".format(
                 self.jobreq['id'],self.jobreq['source_file'], dirname
             ))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Analyse video for normalisation if requested
