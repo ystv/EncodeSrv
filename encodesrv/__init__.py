@@ -98,7 +98,7 @@ class EncodeSrv():
                 conn = psycopg2.connect(**Config["database"])
                 cur = conn.cursor()
                 # Search the DB for jobs not being encoded
-                query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' AND format_id<20 ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 1-THREADPOOL.qsize())
+                query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 1-THREADPOOL.qsize())
                 cur.execute(query)
                 jobs = cur.fetchall()
                 for job in jobs:
