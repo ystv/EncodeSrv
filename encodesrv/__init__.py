@@ -3,12 +3,10 @@
 
 import psycopg2
 import time
-import sys
 import os.path
 
 
 # Logging
-import logging
 from encodesrv import logs
 from encodesrv.logs import log
 from encodesrv.logs.messages import Message_enum
@@ -20,7 +18,8 @@ from encodesrv.daemon import Daemon
 # And config stuff
 from encodesrv.config import Config
 
-class EncodeSrv():
+
+class EncodeSrv(object):
     
     """Actual encodesrv daemon. Jobs and things launched from here
     
@@ -30,6 +29,11 @@ class EncodeSrv():
     """
     
     def __init__(self):
+        # Set up logging
+        log.setup_logging(self)
+        self.logger = logs.get_logger(__name__)
+
+        self.thread_list = []
         
         self.run()
     
@@ -61,11 +65,6 @@ class EncodeSrv():
         Returns:
             None.
         """
-        
-        # Set up logging
-        log.setup_logging(self)
-        self.logger = logs.get_logger(__name__)
-        
         self.logger.info(Message_enum.start_server)
     
         # Reset all crashed jobs
@@ -80,14 +79,12 @@ class EncodeSrv():
         except:
             self.logger.exception("Failed to connect to database on start, oops")
             raise
-    
-        self.thread_list = []
+
         # Spawn off threads to handle the jobs.
         self.logger.info("Spawning Threads", bot = False)
         for x in range(Config['threads']):
             self.logger.debug("spawning thread {}".format(x))
             self.thread_list.append(FFmpegJob().start())
-            
     
         columns = ["id", "source_file", "destination_file", "format_id", "status", "video_id"]
     
@@ -98,11 +95,12 @@ class EncodeSrv():
                 conn = psycopg2.connect(**Config["database"])
                 cur = conn.cursor()
                 # Search the DB for jobs not being encoded
-                query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 6-THREADPOOL.qsize())
+                query = ("SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".
+                         format(", ".join(columns), 6-THREADPOOL.qsize()))
                 cur.execute(query)
                 jobs = cur.fetchall()
-                for job in jobs:
-                    data = dict(zip(columns, job))
+                for j in jobs:
+                    data = dict(zip(columns, j))
                     for key in data:
                         if key in ["source_file", "destination_file"]:
                             data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
@@ -114,10 +112,11 @@ class EncodeSrv():
                 cur.close()
                 conn.close()
             except:
-                self.logger.exception("ERROR: An unhandled exception occured in the server whilst getting jobs.")
+                self.logger.exception("ERROR: An unhandled exception occurred in the server whilst getting jobs.")
                 raise
-            time.sleep(60) #sleep after a run
+            # sleep after a run
+            time.sleep(60)
             while THREADPOOL.qsize() > 6:
                 self.logger.debug("Going to sleep for a while")
-                time.sleep(60) #if the queue is still full, sleep a bit longer
-        return
+                # if the queue is still full, sleep a bit longer
+                time.sleep(60)
