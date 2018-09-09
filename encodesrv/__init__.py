@@ -4,6 +4,8 @@
 import psycopg2
 import time
 import os.path
+import datetime
+from dateutil import relativedelta
 
 
 # Logging
@@ -56,7 +58,7 @@ class EncodeSrv(object):
         return encoding
     
     def run(self):
-        
+
         """Thing that does the actual running.
         
         Arguments:
@@ -85,9 +87,11 @@ class EncodeSrv(object):
         for x in range(Config['threads']):
             self.logger.debug("spawning thread {}".format(x))
             self.thread_list.append(FFmpegJob().start())
-    
+
         columns = ["id", "source_file", "destination_file", "format_id", "status", "video_id"]
-    
+
+        last_success = datetime.datetime.now()
+
         # Now we need to get some data.
         while True:
             try:
@@ -105,18 +109,34 @@ class EncodeSrv(object):
                         if key in ["source_file", "destination_file"]:
                             data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
                     THREADPOOL.put(data)
-    
+
                     cur.execute("UPDATE encode_jobs SET status = 'Waiting' WHERE id = {}".format(data["id"]))
                     conn.commit()
                 # Close communication with the database
                 cur.close()
                 conn.close()
+                last_success = datetime.datetime.now()
+                failure = False
             except:
-                self.logger.exception("ERROR: An unhandled exception occurred in the server whilst getting jobs.")
-                raise
-            # sleep after a run
-            time.sleep(60)
-            while THREADPOOL.qsize() > 6:
-                self.logger.debug("Going to sleep for a while")
-                # if the queue is still full, sleep a bit longer
+                failure = True
+                current_time = datetime.datetime.now()
+                delta = relativedelta.relativedelta(current_time, last_success)
+                if delta.days > 1:
+                    self.logger.critical("CRITICAL: Failed to get jobs for more than 1 day, exiting with exception :(")
+                    raise
+
+                error_message = "ERROR: An unhandled exception occurred in the server whilst getting jobs."
+                time_message = "Last success: {}, Now: {}, {}".format(last_success.isoformat(),
+                                                                      current_time.isoformat(),
+                                                                      delta)
+                self.logger.exception("{} {}".format(error_message, time_message))
+                self.logger.info("INFO: Sleeping for 5 minutes after failing")
+                time.sleep(5 * 60)
+
+            if not failure:
+                # sleep after a run, only if the run was successful
                 time.sleep(60)
+                while THREADPOOL.qsize() > 6:
+                    self.logger.debug("Going to sleep for a while")
+                    # if the queue is still full, sleep a bit longer
+                    time.sleep(60)

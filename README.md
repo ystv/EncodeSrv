@@ -6,7 +6,7 @@ EncodeSrv is a Python driven automatic video encoding tool, using ffmpeg and a d
     git clone https://github.com/YSTV/encodesrv.git
 
 ##Prerequisites
-In order to run, EncodeSrv requires Python and psycopg2, along with access to a few PostgreSQL database tables to store encode formats and jobs.
+In order to run, EncodeSrv requires Python, psycopg2 and python-dateutil, along with access to a few PostgreSQL database tables to store encode formats and jobs.
 
 You'll also need a copy of ffmpeg with the codecs you plan to use compiled in, take a look at https://github.com/rrah/ffmpeg-linux-build for the script we use to build ours.
 
