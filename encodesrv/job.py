@@ -1,7 +1,7 @@
 # Imports
 import threading
 import psycopg2
-import Queue as queue
+import queue
 import os.path
 import shlex
 import shutil
