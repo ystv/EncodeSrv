@@ -74,7 +74,7 @@ class EncodeSrv(object):
             self.logger.debug('Restarting crashed jobs')
             dbconn = psycopg2.connect(**Config["database"])
             cur = dbconn.cursor()
-            cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status !='Done' AND status != 'Error'")
+            cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status LIKE '%{}%' AND status NOT LIKE '%Error%'".format(Config["servername"]))
             dbconn.commit()
             cur.close()
             dbconn.close()
@@ -99,8 +99,7 @@ class EncodeSrv(object):
                 conn = psycopg2.connect(**Config["database"])
                 cur = conn.cursor()
                 # Search the DB for jobs not being encoded
-                query = ("SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".
-                         format(", ".join(columns), 6-THREADPOOL.qsize()))
+                query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 1-THREADPOOL.qsize())
                 cur.execute(query)
                 jobs = cur.fetchall()
                 for j in jobs:
@@ -109,8 +108,7 @@ class EncodeSrv(object):
                         if key in ["source_file", "destination_file"]:
                             data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
                     THREADPOOL.put(data)
-
-                    cur.execute("UPDATE encode_jobs SET status = 'Waiting' WHERE id = {}".format(data["id"]))
+                    cur.execute("UPDATE encode_jobs SET status = '{} - Waiting' WHERE id = {}".format(Config["servername"], data["id"]))
                     conn.commit()
                 # Close communication with the database
                 cur.close()
@@ -136,7 +134,7 @@ class EncodeSrv(object):
             if not failure:
                 # sleep after a run, only if the run was successful
                 time.sleep(60)
-                while THREADPOOL.qsize() > 6:
+                while THREADPOOL.qsize() > 0:
                     self.logger.debug("Going to sleep for a while")
                     # if the queue is still full, sleep a bit longer
                     time.sleep(60)

@@ -75,7 +75,7 @@ class FFmpegJob (threading.Thread):
                 continue
             if not line.rstrip().isdigit():
                 raise Exception("Error during copy " + line)
-            self._update_status("{} {}%".format(desc, line.rstrip()), self.jobreq['id'])
+            self._update_status("{} - {} {}%".format(Config["servername"], desc, line.rstrip()), self.jobreq['id'])
     
     def _nice_name(self):
         """
@@ -133,7 +133,7 @@ class FFmpegJob (threading.Thread):
             with open(self.jobreq['source_file']): pass
         except IOError:
             logger.exception("Job {}: Unable to open source file".format(self.jobreq['id']))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Create temp dir for this job
@@ -144,7 +144,7 @@ class FFmpegJob (threading.Thread):
             os.mkdir(dirname, 0o775)
         except:
             logger.exception("Job {} - Failed to create temporary directory".format(self.jobreq['id']))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         try:
@@ -154,7 +154,7 @@ class FFmpegJob (threading.Thread):
             srcpath = os.path.join(dirname, srcleaf)
         except:
             logger.exception("Job {}: Debug 2 failed".format(self.jobreq['id']));
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
 
@@ -179,7 +179,7 @@ class FFmpegJob (threading.Thread):
             args['_TempDest'] = os.path.join(dirname, os.path.basename(self.jobreq['destination_file']))
         except:
             logger.exception("Job {}: Debug 3 failed".format(self.jobreq['id']));
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Copy to local folder, rename source
@@ -190,13 +190,13 @@ class FFmpegJob (threading.Thread):
             logger.exception("Job {}: couldn't copy from {} to {}".format(
                 self.jobreq['id'],self.jobreq['source_file'], dirname
             ))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Analyse video for normalisation if requested
         if args['normalise_level'] is not '':
             try:
-                self._update_status("Analysing audio", self.jobreq['id'])
+                self._update_status("{} - Analysing audio".format(Config["servername"]), self.jobreq['id'])
 
                 level = float(args['normalise_level'])
                 analysis = subprocess.check_output(["ffmpeg", "-i", srcpath, "-af",
@@ -211,7 +211,7 @@ class FFmpegJob (threading.Thread):
                 args['args_audio'] += '-af volume={0}'.format(increase_factor)
             except:
                 logger.exception("Job {}: Failed normalising volume".format(self.jobreq['id']))
-                self._update_status("Error", self.jobreq['id'])
+                self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
                 return
 
         # Run encode job
@@ -221,13 +221,13 @@ class FFmpegJob (threading.Thread):
             ) ; self.dbconn.commit()
         except:
             logger.exception("Job {}: Failed to update database".format(self.jobreq['id']))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         for _pass in range(1, args['pass'] + 1):
             try:
                 logger.debug("Job {}: Updating Status.".format(self.jobreq['id']))
-                self._update_status("Encoding Pass {}".format(_pass), self.jobreq['id'])
+                self._update_status("{} - Encoding Pass {}".format(Config["servername"], _pass), self.jobreq['id'])
 
                 logger.debug("Job {}: Setting args.".format(self.jobreq['id']))
                 args['_Pass'] = _pass
@@ -253,11 +253,11 @@ class FFmpegJob (threading.Thread):
                     logger.exception("Job {}: Pass {} FAILED for {}".format(self.jobreq['id'],_pass,
                         os.path.basename(dirname)))
                     logger.error("{}:{}".format(e.returncode, e.output))
-                    self._update_status("Error", self.jobreq['id'])
+                    self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
                     return
             except:
                 logger.exception("Job {}: Debug 4 failed".format(self.jobreq['id']));
-                self._update_status("Error", self.jobreq['id'])
+                self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
                 return
 
         # Apply MP4 Box if applicable
@@ -270,17 +270,17 @@ class FFmpegJob (threading.Thread):
 
                 if cmd.returncode != 0:
                     logger.exception("Job {}: MP4Box-ing failed for \"{}\"".format(self.jobreq['id'],os.path.basename(dirname)))
-                    self._update_status("Error", self.jobreq['id'])
+                    self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
                     return
         except:
             logger.exception("Job {}: Debug 5 failed".format(self.jobreq['id']));
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
 
 
         # Copy file to intended destination
-        self._update_status("Moving File", self.jobreq['id'])
+        self._update_status("{} - Moving File".format(Config["servername"]), self.jobreq['id'])
         try:
             logger.debug("Job {}: Moving to {}".format(self.jobreq['id'], self.jobreq['destination_file']))
             if not os.path.exists(os.path.dirname(self.jobreq['destination_file'])):
@@ -291,7 +291,7 @@ class FFmpegJob (threading.Thread):
                 except OSError:
                     logger.exception("Job {}: Failed to create destination directory {}".format(self.jobreq['id'],
                         os.path.dirname(self.jobreq['destination_file'])))
-                    self._update_status("Error", self.jobreq['id'])
+                    self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
                     return
 
             #shutil.copyfile(args['_TempDest'], self.jobreq['destination_file'])
@@ -301,7 +301,7 @@ class FFmpegJob (threading.Thread):
                 files = [f for f in os.listdir(dest[0]) if re.match(dest[1], f)]
                 i = 0
                 for f in files:
-                    self._update_status("Moving files {}%".format((i * 100) / len(files)), self.jobreq['id'])
+                    self._update_status("{} - Moving files {}%".format(Config["servername"], (i * 100) / len(files)), self.jobreq['id'])
                     i = i + 1
                     shutil.copyfile(os.path.join(dest[0], f), os.path.join(os.path.dirname(self.jobreq['destination_file']), f))
             else:
@@ -320,7 +320,7 @@ class FFmpegJob (threading.Thread):
             logger.exception("Job {}: Failed to copy {} to {}".format(
                 self.jobreq['id'],os.path.basename(self.jobreq['source_file']), self.jobreq['destination_file']
                 ))
-            self._update_status("Error", self.jobreq['id'])
+            self._update_status("{} - Error".format(Config["servername"]), self.jobreq['id'])
             return
 
         # Remove the working directory
