@@ -31,12 +31,6 @@ class EncodeSrv(object):
     """
     
     def __init__(self):
-        # Set up logging
-        log.setup_logging(self)
-        self.logger = logs.get_logger(__name__)
-
-        self.thread_list = []
-        
         self.run()
     
     def get_current_jobs(self):
@@ -67,6 +61,13 @@ class EncodeSrv(object):
         Returns:
             None.
         """
+        
+        # Set up logging
+        log.setup_logging(self)
+        self.logger = logs.get_logger(__name__)
+
+        self.thread_list = []
+        
         self.logger.info(Message_enum.start_server)
     
         # Reset all crashed jobs
