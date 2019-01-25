@@ -1,6 +1,4 @@
-# module config
-
-Config = {
+{
 	"database": {
 		"host"    : "example.com",
 		"database": "dbname",
@@ -28,5 +26,6 @@ Config = {
 		"api_key": "aaaa-111111111111111",
 		"channel": "example",
 		"enabled": true
-	}
+	},
+    "servername": "Encode Server"
 }

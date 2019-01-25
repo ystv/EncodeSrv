@@ -1,6 +1,5 @@
 import enum
 
-
 class Message_enum(enum.Enum):
     
     status = 1
