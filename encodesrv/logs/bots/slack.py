@@ -13,6 +13,8 @@ from . import common
 from ...config import Config
 from ..messages import Message_enum
 
+import websocket._exceptions
+
 logger = logging.getLogger(__name__)
 
 class Slack_rtm_thread(threading.Thread):
@@ -49,7 +51,17 @@ class Slack_rtm_thread(threading.Thread):
                     msg = self.send_queue.get(block = False)
                     self.slackclient.rtm_send_message(self.get_channel(), Config["servername"] + "> " + msg)
                 except queue.Empty:
-                    responses = self.slackclient.rtm_read()
+                    try:
+                        responses = self.slackclient.rtm_read()
+                    except (ConnectionResetError, websocket._exceptions.WebSocketConnectionClosedException):
+                        connect = self.slackclient.rtm_connect()
+                        retries = 0
+                        while not connect:
+                            if retries > 8:
+                                retries = 8
+                            connect = self.slackclient.rtm_connect()
+                            time.sleep(retries*15)
+                            retries += 1
                     if responses == []:
                         continue
                     for msg in responses:
