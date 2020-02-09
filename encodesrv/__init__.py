@@ -75,7 +75,7 @@ class EncodeSrv(object):
             self.logger.debug('Restarting crashed jobs')
             dbconn = psycopg2.connect(**Config["database"])
             cur = dbconn.cursor()
-            cur.execute("UPDATE encode_jobs SET status='Not Encoding' WHERE status LIKE '%{}%' AND status NOT LIKE '%Error%'".format(Config["servername"]))
+            cur.execute(f"UPDATE encode_jobs SET status='Not Encoding' WHERE status LIKE '%{Config['servername']}%' AND status NOT LIKE '%Error%'")
             dbconn.commit()
             cur.close()
             dbconn.close()
@@ -86,7 +86,7 @@ class EncodeSrv(object):
         # Spawn off threads to handle the jobs.
         self.logger.info("Spawning Threads", bot = False)
         for x in range(Config['threads']):
-            self.logger.debug("spawning thread {}".format(x))
+            self.logger.debug(f"spawning thread {x}")
             self.thread_list.append(FFmpegJob().start())
 
         columns = ["id", "source_file", "destination_file", "format_id", "status", "video_id"]
@@ -100,16 +100,17 @@ class EncodeSrv(object):
                 conn = psycopg2.connect(**Config["database"])
                 cur = conn.cursor()
                 # Search the DB for jobs not being encoded
-                query = "SELECT {} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {}".format(", ".join(columns), 1-THREADPOOL.qsize())
+                query = f"SELECT {', '.join(columns)} FROM encode_jobs WHERE status = 'Not Encoding' ORDER BY priority DESC LIMIT {1-THREADPOOL.qsize()}"
                 cur.execute(query)
                 jobs = cur.fetchall()
                 for j in jobs:
                     data = dict(zip(columns, j))
-                    for key in data:
-                        if key in ["source_file", "destination_file"]:
-                            data[key] = os.path.join(Config["mntfolder"] + data[key].lstrip("/"))
+                    data["source_file"] = os.path.join(Config["mntfolder"], data["source_file"])
+                    data["destination_file"] = os.path.join(Config[]"mntfolder"], data["destination_file"].lstrip("/data/"))
+                    self.logger.info(f"INFO: Updated source_file = {data['source_file']}")
+                    self.logger.info(f"INFO: Updated destination_file = {data['destination_file']}")
                     THREADPOOL.put(data)
-                    cur.execute("UPDATE encode_jobs SET status = '{} - Waiting' WHERE id = {}".format(Config["servername"], data["id"]))
+                    cur.execute(f"UPDATE encode_jobs SET status = \"{Config['servername']} - Waiting\" WHERE id = {data['id']}"
                     conn.commit()
                 # Close communication with the database
                 cur.close()
@@ -125,10 +126,8 @@ class EncodeSrv(object):
                     raise
 
                 error_message = "ERROR: An unhandled exception occurred in the server whilst getting jobs."
-                time_message = "Last success: {}, Now: {}, {}".format(last_success.isoformat(),
-                                                                      current_time.isoformat(),
-                                                                      delta)
-                self.logger.exception("{} {}".format(error_message, time_message))
+                time_message = f"Last success: {last_success.isoformat()}, Now: {current_time.isoformat()}, {delta}"
+                self.logger.exception(f"{error_message} {time_message}"
                 self.logger.info("INFO: Sleeping for 5 minutes after failing")
                 time.sleep(5 * 60)
 
