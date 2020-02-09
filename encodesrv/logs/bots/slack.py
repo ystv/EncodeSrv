@@ -5,7 +5,7 @@ Author: Robert Walker <robert.walker@ystv.co.uk> 2015
 
 import logging
 import queue
-import slackclient
+import slack
 import threading
 import time
 
@@ -39,7 +39,7 @@ class Slack_rtm_thread(threading.Thread):
         self.channel = channel
         
     def run(self):
-        self.slackclient = slackclient.SlackClient(self.api_key)
+        self.slackclient = slack.WebClient(token=self.api_key)
         connect = self.slackclient.rtm_connect()
         if connect:
             self.connected = True
