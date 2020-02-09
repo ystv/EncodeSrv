@@ -11,8 +11,11 @@
 		"to"	: "computing@example.com",
 		"enabled": false
 	},
-	"tmpfolder": "/tmp/tempencoding",
-	"mntfolder": "/",
+	"tmpfolder":"/tmp/encodesrv",
+	"inputfolder":"/mnt/inputfolder",
+	"remoteinputfolder":"/data/inputfolder",
+	"outputfolder":"/mnt/outputfolder",
+	"remoteoutputfolder":"/data/outputfolder",
 	"threads": 1,
 	"irc": {
 		"server"	: "example.com",

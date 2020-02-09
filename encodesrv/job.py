@@ -60,7 +60,7 @@ class FFmpegJob (threading.Thread):
         """Wrapper to change the DB status of a job """
         try:
             logger.debug(f'Job {id_}: ' + status)
-            self.dbcur.execute(f"UPDATE encode_jobs SET status=\'{status}\' WHERE id = {id_}"
+            self.dbcur.execute("UPDATE encode_jobs SET status=\'{}\' WHERE id = {}".format(status, id_))
             self.dbconn.commit()
         except:
             logger.exception(f"Job {id_}: Failed to update status in DB")
@@ -75,7 +75,7 @@ class FFmpegJob (threading.Thread):
                 continue
             if not line.rstrip().isdigit():
                 raise Exception("Error during copy " + line)
-            self._update_status(f"{Config['servername']} - {desc} {line.rstrip()}%"), self.jobreq['id'])
+            self._update_status(f"{Config['servername']} - {desc} {line.rstrip()}%", self.jobreq['id'])
     
     def _nice_name(self):
         """
@@ -121,7 +121,7 @@ class FFmpegJob (threading.Thread):
             self.dbconn = psycopg2.connect(**Config['database'])
             self.dbcur  = self.dbconn.cursor()
         except:
-            logger.exception(f"Job {self.jobreq['id']}: Could not connect to database"))
+            logger.exception(f"Job {self.jobreq['id']}: Could not connect to database")
             return
         
         logger.info(Message_enum.start_job, data = {"id_": self.jobreq['id'], 
@@ -163,7 +163,8 @@ class FFmpegJob (threading.Thread):
                     'video_resolution', 'audio_bitrate', 'audio_samplerate','audio_codec',
                     'vpre_string', 'preset_string', 'aspect_ratio', 'args_beginning', 'args_video',
                     'args_audio', 'args_end', 'apply_mp4box', 'normalise_level', 'pass')
-            self.dbcur.execute(f"SELECT {'\", \".join(cols)'} FROM encode_formats WHERE id = {self.jobreq['format_id'])}"
+            self.dbcur.execute("SELECT {} FROM encode_formats WHERE id = {}".format(
+                ", ".join(cols), self.jobreq['format_id']) )
 
             fetched = [x if x is not None else '' for x in self.dbcur.fetchone()]
             args = dict(zip(cols, fetched))
@@ -210,7 +211,7 @@ class FFmpegJob (threading.Thread):
 
         # Run encode job
         try:
-            self.dbcur.execute(f"UPDATE encode_jobs SET working_directory={dirname} WHERE id={self.jobreq['id']}")
+            self.dbcur.execute("UPDATE encode_jobs SET working_directory=%s WHERE id=%s",(dirname, self.jobreq['id']))
             self.dbconn.commit()
         except:
             logger.exception(f"Job {self.jobreq['id']}: Failed to update database")
@@ -240,10 +241,10 @@ class FFmpegJob (threading.Thread):
                 try:
                     cmd = subprocess.check_output(shlex.split(FormatString), cwd=dirname)
 
-                    logger.debug(f"Job {self.jobreq['id'])}: Done Waiting.")
+                    logger.debug(f"Job {self.jobreq['id']}: Done Waiting.")
 
                 except subprocess.CalledProcessError as e:
-                    logger.exception(f"Job {self.jobreq['id']}: Pass {_pass} FAILED for {os.path.basename(dirname)}"
+                    logger.exception(f"Job {self.jobreq['id']}: Pass {_pass} FAILED for {os.path.basename(dirname)}")
                     logger.error(f"{e.returncode}:{e.output}")
                     self._update_status(f"{Config['servername']} - Error", self.jobreq['id'])
                     return
@@ -262,11 +263,11 @@ class FFmpegJob (threading.Thread):
 
                 if cmd.returncode != 0:
                     logger.exception(f"Job {self.jobreq['id']}: MP4Box-ing failed for \"{s.path.basename(dirname)}\"")
-                    self._update_status(f"{Config["servername"]} - Error", self.jobreq['id'])
+                    self._update_status(f"{Config'servername']} - Error", self.jobreq['id'])
                     return
         except:
             logger.exception(f"Job {self.jobreq['id']}: Debug 5 failed")
-            self._update_status(f"{Config["servername"]} - Error", self.jobreq['id'])
+            self._update_status(f"{Config['servername']} - Error", self.jobreq['id'])
             return
 
 
@@ -281,7 +282,7 @@ class FFmpegJob (threading.Thread):
                     os.makedirs(os.path.dirname(self.jobreq['destination_file']))
                 except OSError:
                     logger.exception(f"Job {self.jobreq['id']}: Failed to create destination directory {os.path.dirname(self.jobreq['destination_file'])}")
-                    self._update_status(f"{Config["servername"]} - Error", self.jobreq['id'])
+                    self._update_status(f"{Config['servername']} - Error", self.jobreq['id'])
                     return
 
             p = re.compile('%([0-9]+)d')
@@ -290,7 +291,7 @@ class FFmpegJob (threading.Thread):
                 files = [f for f in os.listdir(dest[0]) if re.match(dest[1], f)]
                 i = 0
                 for f in files:
-                    self._update_status(f"{Config["servername"]} - Moving files {(i * 100) / len(files)}%", self.jobreq['id'])
+                    self._update_status(f"{Config['servername']} - Moving files {(i * 100) / len(files)}%", self.jobreq['id'])
                     i += 1
                     shutil.copyfile(os.path.join(dest[0], f), os.path.join(os.path.dirname(self.jobreq['destination_file']), f))
             else:
@@ -307,7 +308,7 @@ class FFmpegJob (threading.Thread):
 
         except:
             logger.exception(f"Job {self.jobreq['id']}: Failed to copy {os.path.basename(self.jobreq['source_file'])} to {self.jobreq['destination_file']}")
-            self._update_status(f"{Config["servername"]} - Error", self.jobreq['id'])
+            self._update_status(f"{Config['servername']} - Error", self.jobreq['id'])
             return
 
         # Remove the working directory

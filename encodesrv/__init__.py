@@ -105,12 +105,12 @@ class EncodeSrv(object):
                 jobs = cur.fetchall()
                 for j in jobs:
                     data = dict(zip(columns, j))
-                    data["source_file"] = os.path.join(Config["mntfolder"], data["source_file"])
-                    data["destination_file"] = os.path.join(Config[]"mntfolder"], data["destination_file"].lstrip("/data/"))
-                    self.logger.info(f"INFO: Updated source_file = {data['source_file']}")
-                    self.logger.info(f"INFO: Updated destination_file = {data['destination_file']}")
+                    data["source_file"] = os.path.join(Config["inputfolder"], data["source_file"].lstrip(Config["remoteinputfolder"]))
+                    data["destination_file"] = os.path.join(Config["outputfolder"], data["destination_file"].lstrip("remoteoutputfolder"))
+                    self.logger.info(f"DEBUG: Updated source_file: = {data['source_file']}")
+                    self.logger.info(f"DEBUG: Updated destination_file = {data['destination_file']}")
                     THREADPOOL.put(data)
-                    cur.execute(f"UPDATE encode_jobs SET status = \"{Config['servername']} - Waiting\" WHERE id = {data['id']}"
+                    cur.execute("UPDATE encode_jobs SET status = '{} - Waiting' WHERE id = {}".format(Config["servername"], data["id"]))
                     conn.commit()
                 # Close communication with the database
                 cur.close()
@@ -127,7 +127,7 @@ class EncodeSrv(object):
 
                 error_message = "ERROR: An unhandled exception occurred in the server whilst getting jobs."
                 time_message = f"Last success: {last_success.isoformat()}, Now: {current_time.isoformat()}, {delta}"
-                self.logger.exception(f"{error_message} {time_message}"
+                self.logger.exception(f"{error_message} {time_message}")
                 self.logger.info("INFO: Sleeping for 5 minutes after failing")
                 time.sleep(5 * 60)
 
